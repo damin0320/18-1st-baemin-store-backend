@@ -31,6 +31,8 @@ class Product(models.Model):
     updated_at     = models.DateTimeField(auto_now=True, null=True)
     sub_category   = models.ForeignKey('SubCategory', on_delete=models.CASCADE)
     recommendation = models.ManyToManyField('self', symmetrical=True)
+    product_option = models.ManyToManyField('Option', through='ProductOption')
+
 
     class Meta:
         db_table = 'products'
