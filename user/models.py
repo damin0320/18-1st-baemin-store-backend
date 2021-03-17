@@ -10,6 +10,7 @@ class User(models.Model):
     postal_code      = models.CharField(max_length=5)
     detailed_address = models.CharField(max_length=30, null=True)
     point            = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    user_coupon      = models.ManyToManyField('Coupon', through='UserCoupon')
 
     class Meta:
         db_table = 'users'
