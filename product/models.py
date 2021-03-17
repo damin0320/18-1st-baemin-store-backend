@@ -67,17 +67,15 @@ class BookDescription(models.Model):
         db_table = 'book_descriptions'
 
 
-# TODO: add after making order app
+class Review(models.Model):
+    content = models.CharField(max_length=500, null=True)
+    rating  = models.SmallIntegerField(null=True)
+    product = models.ForeignKey('Product', on_delete=models.CASCADE)
+    user    = models.ForeignKey('user.User', on_delete=models.CASCADE)
+    order   = models.ForeignKey('order.Order', on_delete=models.CASCADE)
 
-# class Review(models.Model):
-#     content = models.CharField(max_length=500, null=True)
-#     rating  = models.SmallIntegerField(null=True)
-#     product = models.ForeignKey('Product', on_delete=models.CASCADE)
-#     user    = models.ForeignKey('user.User', on_delete=models.CASCADE)
-#     order   = models.ForeignKey('order.Order', on_delete=models.CASCADE)
-
-#     class Meta:
-#         db_table = 'reviews'
+    class Meta:
+        db_table = 'reviews'
 
 
 class ProductInquiry(models.Model):
