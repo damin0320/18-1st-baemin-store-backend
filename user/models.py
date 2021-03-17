@@ -31,6 +31,7 @@ class Coupon(models.Model):
     discount_price = models.DecimalField(max_digits=10, decimal_places=2)
     issue_date     = models.DateTimeField(auto_now_add=True)
     expire_date    = models.DateTimeField()
+    coupon_sub_category = models.ManyToManyField('product.SubCategory', through='product.CouponSubCategory')
 
     class Meta:
         db_table = 'coupons'
