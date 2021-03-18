@@ -25,13 +25,13 @@ class CouponSubCategory(models.Model):
 
 
 class Product(models.Model):
-    name           = models.CharField(max_length=30, unique=True)
-    price          = models.DecimalField(max_digits=10, decimal_places=2)
-    created_at     = models.DateTimeField(auto_now_add=True)
-    updated_at     = models.DateTimeField(auto_now=True, null=True)
-    sub_category   = models.ForeignKey('SubCategory', on_delete=models.CASCADE)
-    recommendation = models.ManyToManyField('self', symmetrical=True)
-    product_option = models.ManyToManyField('Option', through='ProductOption')
+    name             = models.CharField(max_length=30, unique=True)
+    price            = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at       = models.DateTimeField(auto_now_add=True)
+    updated_at       = models.DateTimeField(auto_now=True)
+    sub_category     = models.ForeignKey('SubCategory', on_delete=models.CASCADE)
+    recommendations  = models.ManyToManyField('self', symmetrical=True)
+    product_options  = models.ManyToManyField('Option', through='ProductOption')
 
 
     class Meta:
@@ -59,11 +59,11 @@ class ProductDescription(models.Model):
 
 
 class BookDescription(models.Model):
-    title     = models.CharField(max_length=30, unique=True)
-    publisher = models.CharField(max_length=30)
-    size_mm   = models.CharField(max_length=30, null=True)
-    page      = models.IntegerField()
-    product   = models.ForeignKey('Product', on_delete=models.CASCADE)
+    title      = models.CharField(max_length=30, unique=True)
+    publisher  = models.CharField(max_length=30)
+    size_mm    = models.CharField(max_length=30, null=True)
+    total_page = models.IntegerField()
+    product    = models.ForeignKey('Product', on_delete=models.CASCADE)
 
     class Meta:
         db_table = 'book_descriptions'
