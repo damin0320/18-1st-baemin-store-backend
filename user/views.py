@@ -13,13 +13,12 @@ class LoginView(View):
         try:
             data     = json.loads(request.body)
             user     = User.objects.get(username=data['username'])
-            user_id  = user.id
             password = data['password']
             
             if bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
-                token = jwt.encode({'user_id' : user_id}, SECRET_KEY, algorithm=HASHING_ALGORITHM)
+                token = jwt.encode({'user_id' : user.id}, SECRET_KEY, algorithm=HASHING_ALGORITHM)
                 return JsonResponse({'token' : token, 'message':'SUCCESS'}, status=200)
-            return JsonResponse({'message' : 'INVALID_USER'}, status=403)
+            return JsonResponse({'message' : 'INVALID_USER'}, status=401)
         except KeyError:
             return JsonResponse({'message' : 'KEY_ERROR'}, status=400)
         except User.DoesNotExist:
