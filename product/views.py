@@ -6,6 +6,8 @@ from django.http  import JsonResponse
 
 from .models import Product, Category, SubCategory, Option, ProductOption, DiscountRate, BookDescription, ProductDescription
 
+
+# TODO: Input filtering logic (type, length ...)
 class ProductView(View):
     def post(self, request):
         try:
@@ -24,10 +26,10 @@ class ProductView(View):
             category     = Category.objects.create(name=category_name)
             sub_category = SubCategory.objects.create(name=sub_category_name, category=category)
             product      = Product.objects.create(
-                                                sub_category        = sub_category,
-                                                name                = product_name,
-                                                price               = price,
-                                                thumbnail_image_url = thumbnail
+                                                  sub_category        = sub_category,
+                                                  name                = product_name,
+                                                  price               = price,
+                                                  thumbnail_image_url = thumbnail
                                                 )
             
             if sub_category == 'book':
@@ -37,11 +39,11 @@ class ProductView(View):
                 size_mm    = data.get('size_mm', None)
 
                 BookDescription.objects.create(
-                                            product    = product,
-                                            title      = title,
-                                            publisher  = publisher,
-                                            size_mm    = size_mm,
-                                            total_page = total_page
+                                               product    = product,
+                                               title      = title,
+                                               publisher  = publisher,
+                                               size_mm    = size_mm,
+                                               total_page = total_page
                                             )
             else:    
                 material            = data.get('material', None)
@@ -50,29 +52,29 @@ class ProductView(View):
                 caution             = data.get('caution', None)
 
                 ProductDescription.objects.create(
-                                                product             = product,
-                                                name                = name,
-                                                material            = material,
-                                                size_cm             = size_cm,
-                                                manufacture_country = manufacture_country,
-                                                caution             = caution
+                                                  product             = product,
+                                                  name                = name,
+                                                  material            = material,
+                                                  size_cm             = size_cm,
+                                                  manufacture_country = manufacture_country,
+                                                  caution             = caution
                                                 )
 
             if option_classification:
                 options = data['options']
                 for option in options:
                     option_obj = Option.objects.create(
-                                                    classification = option_classification,
-                                                    name           = option['option_name']
+                                                       classification = option_classification,
+                                                       name           = option['option_name']
                                                     )
 
                     ProductOption.objects.create(
-                                                sub_category     = sub_category,
-                                                product          = product,
-                                                stock            = option['option_stock'],
-                                                additional_price = option['additional_price'],
-                                                option           = option_obj
-                                                )
+                                                 sub_category     = sub_category,
+                                                 product          = product,
+                                                 stock            = option['option_stock'],
+                                                 additional_price = option['additional_price'],
+                                                 option           = option_obj
+                                            )
 
             DiscountRate.objects.create(product=product, rate=discount_rate)
             return JsonResponse({'message': 'SUCCESS'}, status=201)
