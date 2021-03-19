@@ -99,12 +99,12 @@ class DiscountRate(models.Model):
     
 
 class Option(models.Model):
-    classification = models.CharField(max_length=45, unique=True)
-    name           = models.CharField(max_length=45, unique=True)
+    classification = models.CharField(max_length=45)
+    name           = models.CharField(max_length=45)
 
     class Meta:
-        db_table = 'options'
-
+        db_table        = 'options'
+        unique_together = ('classification', 'name')
 
 class ProductOption(models.Model):
     stock            = models.IntegerField()
