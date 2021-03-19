@@ -4,42 +4,80 @@ from json import JSONDecodeError
 from django.views import View
 from django.http  import JsonResponse
 
-from .models import Product
+from .models import Product, Category, SubCategory, Option, ProductOption, DiscountRate, BookDescription, ProductDescription
 
 class ProductView(View):
     def post(self, request):
-        data = json.loads(request.body)
-        
-        category              = data['category']
-        sub_category          = data['sub_category']
-        name                  = data['name']
-        price                 = data['price']
-        thumbnail             = data['thumbnail']
-        images                = data['images']
-        stock                 = data['stock']
-        discount_rate         = data.get('discount_rate', 0)
-        option_classification = data.get('option_classification', None)
-        
-        if option_classification:
-            options      = data['options']
-            options_list = list()
-            for option in options:
-                _option = {
-                    'option_name'     : option['option_name']
-                    'additional_price': option['additional_price']
-                    'option_stock'    : option['option_stock']
-                }
-                options_list.append(_option)
-        
-        if sub_category == 'book':
-            title      = data['title']
-            publisher  = data['publisher']
-            total_page = data['total_page']
-            size_mm    = data.get('size_mm', None)
-        else:    
-            material            = data.get('material', None)
-            size_cm             = data.get('size_cm', None)
-            manufacture_country = data.get('manufacture_country', None)
-            caution             = data.get('caution', None)
-        
-        
+        try:
+            data = json.loads(request.body)
+            
+            category_name         = data['category_name']
+            sub_category_name     = data['sub_category_name']
+            product_name          = data['product_name']
+            price                 = data['price']
+            thumbnail             = data['thumbnail']
+            images                = data['images']
+            stock                 = data['stock']
+            discount_rate         = data.get('discount_rate', 0)
+            option_classification = data.get('option_classification', None)
+            
+            category     = Category.objects.create(name=category_name)
+            sub_category = SubCategory.objects.create(name=sub_category_name, category=category)
+            product      = Product.objects.create(
+                                                sub_category        = sub_category,
+                                                name                = product_name,
+                                                price               = price,
+                                                thumbnail_image_url = thumbnail
+                                                )
+            
+            if sub_category == 'book':
+                title      = data['title']
+                publisher  = data['publisher']
+                total_page = data['total_page']
+                size_mm    = data.get('size_mm', None)
+
+                BookDescription.objects.create(
+                                            product    = product,
+                                            title      = title,
+                                            publisher  = publisher,
+                                            size_mm    = size_mm,
+                                            total_page = total_page
+                                            )
+            else:    
+                material            = data.get('material', None)
+                size_cm             = data.get('size_cm', None)
+                manufacture_country = data.get('manufacture_country', None)
+                caution             = data.get('caution', None)
+
+                ProductDescription.objects.create(
+                                                product             = product,
+                                                name                = name,
+                                                material            = material,
+                                                size_cm             = size_cm,
+                                                manufacture_country = manufacture_country,
+                                                caution             = caution
+                                                )
+
+            if option_classification:
+                options = data['options']
+                for option in options:
+                    option_obj = Option.objects.create(
+                                                    classification = option_classification,
+                                                    name           = option['option_name']
+                                                    )
+
+                    ProductOption.objects.create(
+                                                sub_category     = sub_category,
+                                                product          = product,
+                                                stock            = option['option_stock'],
+                                                additional_price = option['additional_price'],
+                                                option           = option_obj
+                                                )
+
+            DiscountRate.objects.create(product=product, rate=discount_rate)
+            return JsonResponse({'message': 'SUCCESS'}, status=201)
+            
+        except KeyError:
+            return JsonResponse({'message': 'KEY_ERROR'}, status=400)
+        except JSONDecodeError:
+            return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
