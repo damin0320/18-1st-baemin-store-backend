@@ -99,7 +99,7 @@ class DiscountRate(models.Model):
     
 
 class Option(models.Model):
-    classification = models.CharField(max_length=45, unique=True)
+    classification = models.CharField(max_length=45)
     name           = models.CharField(max_length=45, unique=True)
 
     class Meta:
