@@ -1,9 +1,10 @@
 import json
 from json import JSONDecodeError
 
-from django.db    import transaction
-from django.views import View
-from django.http  import JsonResponse
+from django.db       import transaction, IntegrityError
+from django.db.utils import DataError
+from django.views    import View
+from django.http     import JsonResponse
 
 from .models import Product, Category, SubCategory, Option, ProductOption, DiscountRate, BookDescription, ProductDescription
 
@@ -31,7 +32,8 @@ class ProductView(View):
                                                   sub_category        = sub_category,
                                                   name                = product_name,
                                                   price               = price,
-                                                  thumbnail_image_url = thumbnail
+                                                  thumbnail_image_url = thumbnail,
+                                                  stock               = stock
                                                 )
             
             if sub_category == 'book':
@@ -84,3 +86,7 @@ class ProductView(View):
             return JsonResponse({'message': 'KEY_ERROR'}, status=400)
         except JSONDecodeError:
             return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
+        except IntegrityError:
+            return JsonResponse({'message': 'INTEGRITY_ERROR'}, status=400)
+        except DataError:
+            return JsonResponse({'message': 'DATA_ERROR'}, status=400)
