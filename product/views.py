@@ -23,8 +23,8 @@ class ProductView(View):
             discount_rate         = data.get('discount_rate', 0)
             option_classification = data.get('option_classification', None)
             
-            category     = Category.objects.create(name=category_name)
-            sub_category = SubCategory.objects.create(name=sub_category_name, category=category)
+            category     = Category.objects.get_or_create(name=category_name)[0]
+            sub_category = SubCategory.objects.get_or_create(name=sub_category_name, category=category)[0]
             product      = Product.objects.create(
                                                   sub_category        = sub_category,
                                                   name                = product_name,
@@ -33,14 +33,13 @@ class ProductView(View):
                                                 )
             
             if sub_category == 'book':
-                title      = data['title']
                 publisher  = data['publisher']
                 total_page = data['total_page']
                 size_mm    = data.get('size_mm', None)
 
                 BookDescription.objects.create(
                                                product    = product,
-                                               title      = title,
+                                               title      = product_name,
                                                publisher  = publisher,
                                                size_mm    = size_mm,
                                                total_page = total_page
@@ -53,7 +52,7 @@ class ProductView(View):
 
                 ProductDescription.objects.create(
                                                   product             = product,
-                                                  name                = name,
+                                                  name                = product_name,
                                                   material            = material,
                                                   size_cm             = size_cm,
                                                   manufacture_country = manufacture_country,
