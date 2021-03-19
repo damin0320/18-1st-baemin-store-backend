@@ -31,25 +31,25 @@ class ProductShowInformationView(View):
             }
         for productimage in productimages:
             productimage_dict = {
-                'image_url' : image_url,
-                'product' : productshowinformations,
+                'image_url': image_url,
+                'product'  : productshowinformations,
             }    
         for productdescription in productdescriptions:
             prductdescription_dict = {
-                'name' : name,
-                'material' : material,
-                'size_cm' : size_cm,
-                'manufacture_country' : manufacture_country,
-                'caution' : caution,
-                'product' : product
+                'name'               : name,
+                'material'           : material,
+                'size_cm'            : size_cm,
+                'manufacture_country': manufacture_country,
+                'caution'            : caution,
+                'product'            : product
             }
         for bookdescription in bookdescriptions:
             bookdescription_dict = {
-                'title' : title,
+                'title'     : title,
                 'publisher' : publisher,
-                'size_mm' : size_mm,
-                'total_page' : total_page,
-                'product' : product
+                'size_mm'   : size_mm,
+                'total_page': total_page,
+                'product'   : product
             }
             
         for option in options:
