@@ -22,11 +22,15 @@ class ProductView(View):
         
         if option_classification:
             options      = data['options']
-            options_list = dict()
+            options_list = list()
             for option in options:
-                options_list = {
+                _option = {
+                    'option_name'     : option['option_name']
+                    'additional_price': option['additional_price']
+                    'option_stock'    : option['option_stock']
                 }
-
+                options_list.append(_option)
+        
         if sub_category == 'book':
             title      = data['title']
             publisher  = data['publisher']
@@ -37,4 +41,5 @@ class ProductView(View):
             size_cm             = data.get('size_cm', None)
             manufacture_country = data.get('manufacture_country', None)
             caution             = data.get('caution', None)
+        
         
