@@ -1,6 +1,7 @@
 import json
 from json import JSONDecodeError
 
+from django.db    import transaction
 from django.views import View
 from django.http  import JsonResponse
 
@@ -9,6 +10,7 @@ from .models import Product, Category, SubCategory, Option, ProductOption, Disco
 
 # TODO: Input filtering logic (type, length ...)
 class ProductView(View):
+    @transaction.atomic
     def post(self, request):
         try:
             data = json.loads(request.body)
