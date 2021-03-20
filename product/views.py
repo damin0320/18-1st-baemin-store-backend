@@ -66,10 +66,10 @@ class ProductView(View):
             if option_classification:
                 options = data['options']
                 for option in options:
-                    option_obj = Option.objects.create(
+                    option_obj = Option.objects.get_or_create(
                                                        classification = option_classification,
                                                        name           = option['option_name']
-                                                    )
+                                                    )[0]
 
                     ProductOption.objects.create(
                                                  sub_category     = sub_category,
