@@ -26,6 +26,7 @@ class CategoryView(View):
                 discounted_price = product.price - product.price * (discount_rate / 100)
 
                 product_dict = dict(
+                                    product_id        = product.id,
                                     product_name      = product.name,
                                     product_price     = int(product.price),
                                     product_thumbnail = product.thumbnail_image_url,
