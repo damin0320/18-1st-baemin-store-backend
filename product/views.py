@@ -1,4 +1,5 @@
 import json
+from json import JSONDecodeError
 
 from django.views import View
 from django.http  import JsonResponse
@@ -7,82 +8,92 @@ from .models      import Category, SubCategory, Product, ProductImage, ProductDe
 from user.models  import User
 from order.models import Order
 
-class ProductShowInformationView(View):
-    def get(self, request):
-        products            = Product.objects.all()
-        productimages       = Product.productimage.all()
-        productdescriptions = Product.productdescription.all()
-        bookdescriptions    = Product.bookdescription.all()
-        options             = Product.product_options.filter(subcategory=data['subcategory'])
-        discount_rates      = Product.discountrate.filter(product=data['product'])
-        productoptions      = Product.product_options.filter(stock=data['stock'], additional_price=data['additional_price'])
-        reviews             = Product.review.all()
-        product_inquiry     = Product.product_inquiry.all()
 
-        result = []
-        
-        for product in products:
-            product_dict = {
-                'name'               : product.name,
-                'price'              : product.price,
-                'thumbnail_image_url': product.thumbnail_image_url,
-                'stock'              : stock,
-                'sub_category'       : sub_category
-            }
-        for productimage in productimages:
-            productimage_dict = {
-                'image_url': image_url,
-                'product'  : productshowinformations,
-            }    
-        for productdescription in productdescriptions:
-            prductdescription_dict = {
-                'name'               : name,
-                'material'           : material,
-                'size_cm'            : size_cm,
-                'manufacture_country': manufacture_country,
-                'caution'            : caution,
-                'product'            : product
-            }
-        for bookdescription in bookdescriptions:
-            bookdescription_dict = {
-                'title'     : title,
-                'publisher' : publisher,
-                'size_mm'   : size_mm,
-                'total_page': total_page,
-                'product'   : product
-            }
+class ProductView(View):
+    def get(self, request, product_id):
+        try:            
+            product = Product.objects.get(id=product_id)
+
+            product_name      = product.name
+            product_price     = product.price
+            product_thumbnail = product.thumbnail_image_url
+            product_stock     = product.stock
+
+            discount_rate = DiscountRate.objects.get(product=product).rate
+
+            product_images = ProductImage.objects.filter(product=product)
+            images_list = list()
+            for product_image in product_images:
+                image_url = product_image.image_url
+                images_list.append(image_url)
+
+            products_options = ProductOption.objects.filter(product=product)
+            options_list = list()
+            for product_option in products_options:
+                option = Option.objects.get(id=product_option.option_id)
+
+                option_dict = dict(
+                                option_name             = option.name,
+                                option_classification   = option.classification,
+                                option_stock            = product_option.stock,
+                                option_additional_price = product_option.additional_price,
+                                product_option_id       = product_option.id
+                                )
+                options_list.append(option_dict)
+
+            category_name = product.sub_category.category.name
+
+            if category_name == '책':
+                book_description = BookDescription.objects.get(product=product)
+
+                detailed_description = dict(
+                                            title      = book_description.title,
+                                            publisher  = book_description.publisher,
+                                            size_mm    = book_description.size_mm,
+                                            total_page = book_description.total_page
+                                        )
+            else:
+                product_description = ProductDescription.objects.get(product=product)
+
+                detailed_description = dict(
+                                            name                = product_description.name,
+                                            material            = product_description.material,
+                                            size_cm             = product_description.size_cm,
+                                            manufacture_country = product_description.manufacture_country,
+                                            caution             = product_description.caution
+                                        )           
+
+            product_inquiries = ProductInquiry.objects.filter(product=product)
+            inquiries_list = list()
+            for product_inquiry in product_inquiries:
+                product_inquiry_content  = product_inquiry.content
+                product_inquiry_username = product_inquiry.user.username
             
-        for option in options:
-            option_dict = {
-                'classification': classification,
-                'name'          : name
-            }
-        for productoption in productoptions:
-            productoption_dict = {
-                'stock'           : stock,
-                'additional_price': additional_price
-                'product'         : product,
-                'option'          : option,
-                'sub_category'    : sub_category
-            }
-        for discount_rate in discount_rates:
-            discount_rate_dict = {
-                'rate'   : discount_rate.rate,
-                'product': product
-            }
-        for review in reviews:
-            review_dict = {
-                'content': review.content,
-                'product': review.productshowinformations,
-                'user'   : review.user.user,
-                'product': product,
-                'order'  : order
-            }
-        for product_inquiry in product_inquiriesL:
-            product_inquiry_dict = {
-                'content': content,
-                'product': product,
-                'user'   : user
-            }
-        result.append(productshowinformation_dict, option_dict, discount_rate_dict)
-        return JsonResponse({'result' : result}, status=200)
+            # TODO: add review contents
+            results = dict(
+                        product_name         = product_name,
+                        product_price        = product_price,
+                        product_thumbnail    = product_thumbnail,
+                        product_stock        = product_stock,
+                        discount_rate        = discount_rate,
+                        images_list          = images_list,
+                        options_list         = options_list,
+                        detailed_description = detailed_description,
+                        inquiries_list       = inquiries_list,
+                        reviews_list         = ''
+                        )
+            
+            return JsonResponse(results, status=200) 
+
+        except JSONDecodeError:
+            return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
+        except KeyError:
+            return JsonResponse({'message': 'KEY_ERROR'}, status=400)
+        except Product.DoesNotExist:
+            return JsonResponse({'message': 'PRODUCT_DOES_NOT_EXIST'}, status=404)
+        except DiscountRate.DoesNotExist:
+            return JsonResponse({'message': 'DISCOUNTRATE_DOES_NOT_EXIST'}, status=404)
+        except BookDescription.DoesNotExist:
+            return JsonResponse({'message': 'BOOKDESCRIPTION_DOES_NOT_EXIST'}, status=404)
+        except ProductDescription.DoesNotExist:
+            return JsonResponse({'message': 'PRODUCTDESCRIPTION_DOES_NOT_EXIST'}, status=404)

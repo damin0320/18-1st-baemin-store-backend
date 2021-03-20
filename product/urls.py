@@ -1,6 +1,7 @@
 from django.urls import path
-from .views      import ProductShowInformationView
+from django.conf.urls import re_path
+from .views      import ProductView
 
 urlpatterns = [
-    path('/product',ProductShowInformationView.as_view()),
+    re_path(r'^/(?P<product_id>\d+)$', ProductView.as_view()),
 ]
