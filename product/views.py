@@ -71,6 +71,7 @@ class ProductView(View):
             
             # TODO: add review contents
             results = dict(
+                        category_name        = category_name,
                         product_name         = product_name,
                         product_price        = product_price,
                         product_thumbnail    = product_thumbnail,
