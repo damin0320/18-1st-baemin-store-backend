@@ -15,9 +15,9 @@ class ProductView(View):
             product = Product.objects.get(id=product_id)
 
             product_name      = product.name
-            product_price     = product.price
+            product_price     = int(product.price)
             product_thumbnail = product.thumbnail_image_url
-            product_stock     = product.stock
+            product_stock     = int(product.stock)
 
             discount_rate    = DiscountRate.objects.get(product=product).rate * 100
             discounted_price = product_price - product_price * (discount_rate / 100)
