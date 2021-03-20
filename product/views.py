@@ -37,7 +37,7 @@ class ProductView(View):
                                 option_name             = option.name,
                                 option_classification   = option.classification,
                                 option_stock            = product_option.stock,
-                                option_additional_price = product_option.additional_price,
+                                option_additional_price = int(product_option.additional_price),
                                 product_option_id       = product_option.id
                                 )
                 options_list.append(option_dict)
@@ -75,9 +75,10 @@ class ProductView(View):
                         category_name        = category_name,
                         product_name         = product_name,
                         product_price        = product_price,
+                        discount_rate        = int(discount_rate),
+                        discounted_price     = int(discounted_price),
                         product_thumbnail    = product_thumbnail,
                         product_stock        = product_stock,
-                        discount_rate        = discount_rate,
                         images_list          = images_list,
                         options_list         = options_list,
                         detailed_description = detailed_description,
