@@ -6,7 +6,7 @@ from django.db.utils import DataError
 from django.views    import View
 from django.http     import JsonResponse
 
-from .models import Product, Category, SubCategory, Option, ProductOption, DiscountRate, BookDescription, ProductDescription
+from .models import Product, Category, SubCategory, Option, ProductOption, DiscountRate, BookDescription, ProductDescription, ProductImage
 
 
 # TODO: Input filtering logic (type, length ...)
@@ -36,6 +36,9 @@ class ProductView(View):
                                                   stock               = stock
                                                 )
             
+            for image in images:
+                ProductImage.objects.create(product=product, image_url=image)
+                
             if sub_category == 'book':
                 publisher  = data['publisher']
                 total_page = data['total_page']
