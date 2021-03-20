@@ -19,7 +19,10 @@ class ProductView(View):
             product_thumbnail = product.thumbnail_image_url
             product_stock     = product.stock
 
-            discount_rate = DiscountRate.objects.get(product=product).rate * 100
+            discount_rate    = DiscountRate.objects.get(product=product).rate
+            discounted_price = product_price * discount_rate
+            
+            discount_rate *= 100
 
             product_images = ProductImage.objects.filter(product=product)
             images_list = list()
