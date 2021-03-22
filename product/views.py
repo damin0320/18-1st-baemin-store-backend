@@ -9,7 +9,7 @@ from django.http     import JsonResponse
 from .models import (
                      Product, Category, SubCategory,
                      Option, ProductOption, DiscountRate,
-                     BookDescription, ProductDescription
+                     BookDescription, ProductDescription, ProductImage
                 )
 
 
@@ -29,7 +29,7 @@ class ProductView(View):
             stock                 = data['stock']
             discount_rate         = data.get('discount_rate', 0)
             option_classification = data.get('option_classification', None)
-            
+
             category    , _ = Category.objects.get_or_create(name=category_name)
             sub_category, _ = SubCategory.objects.get_or_create(name=sub_category_name, category=category)
             product         = Product.objects.create(
@@ -43,7 +43,7 @@ class ProductView(View):
             for image in images:
                 ProductImage.objects.create(product=product, image_url=image)
                 
-            if sub_category.name == 'book':
+            if sub_category.name == '책':
                 publisher  = data['publisher']
                 total_page = data['total_page']
                 size_mm    = data.get('size_mm', None)
