@@ -11,13 +11,11 @@ class WishListView(View):
     def post(self, request):
         data = json.loads(request.body)
         
-        product = Product.objects.get(id=data['product_id'])
         user    = User.objects.get(username=data['username'])
-        
         
         wishlist = WishList.objects.create(
             quantity          = data['quantity'],
-            product           = product,
+            product_id        = data['product_id'],
             user              = user,
             product_option_id = data['product_option_id']
         )
