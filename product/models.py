@@ -71,20 +71,25 @@ class BookDescription(models.Model):
 
 
 class Review(models.Model):
-    content = models.CharField(max_length=500, null=True)
-    rating  = models.SmallIntegerField(null=True)
-    product = models.ForeignKey('Product', on_delete=models.CASCADE)
-    user    = models.ForeignKey('user.User', on_delete=models.CASCADE)
-    order   = models.ForeignKey('order.Order', on_delete=models.CASCADE)
+    content    = models.CharField(max_length=500, null=True)
+    rating     = models.SmallIntegerField(null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    product    = models.ForeignKey('Product', on_delete=models.CASCADE)
+    user       = models.ForeignKey('user.User', on_delete=models.CASCADE)
+    order      = models.ForeignKey('order.Order', on_delete=models.CASCADE)
+    
 
     class Meta:
         db_table = 'reviews'
 
 
 class ProductInquiry(models.Model):
-    content = models.CharField(max_length=500)
-    product = models.ForeignKey('Product', on_delete=models.CASCADE)
-    user    = models.ForeignKey('user.User', on_delete=models.CASCADE)
+    content    = models.CharField(max_length=500)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    product    = models.ForeignKey('Product', on_delete=models.CASCADE)
+    user       = models.ForeignKey('user.User', on_delete=models.CASCADE)
 
     class Meta:
         db_table = 'product_inquiries'
