@@ -3,12 +3,14 @@ from json import JSONDecodeError
 
 from django.views import View
 from django.http  import JsonResponse
+from django.db    import transaction
 
 from .models        import WishList
 from product.models import Product, ProductOption, Option, DiscountRate
 from user.models    import User
 
 class WishListView(View):
+    @transaction.atomic
     def post(self, request):
         try:
             data = json.loads(request.body)
