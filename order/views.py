@@ -38,6 +38,7 @@ class WishListView(View):
         try:
             for wishlist in wishlists:
                 product = wishlist.product
+                user    = wishlist.user
                 # product 직접 접근 가능
                 my_dict = dict(
                     quantity          = wishlist.quantity,
@@ -46,7 +47,8 @@ class WishListView(View):
                     product_thumnail  = product.thumbnail_image_url,
                     user_id           = wishlist.user.id,
                     product_option_id = wishlist.product_option.id,
-                    price             = product.price
+                    price             = product.price,
+                    point             = user.point
                 )
                 result.append(my_dict)
             return JsonResponse({'result' : result}, status=200)
