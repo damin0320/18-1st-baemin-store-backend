@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='productinquiry',
             name='created_at',
-            field=models.DateTimeField(auto_now_add=True, default=1994),
+            field=models.DateTimeField(auto_now_add=True, default='1994-11-15'),
             preserve_default=False,
         ),
         migrations.AddField(
@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='review',
             name='created_at',
-            field=models.DateTimeField(auto_now_add=True, default=1995),
+            field=models.DateTimeField(auto_now_add=True, default='1995-11-15'),
             preserve_default=False,
         ),
         migrations.AddField(
