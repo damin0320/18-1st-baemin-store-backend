@@ -38,49 +38,51 @@ class ProductView(View):
             if category_name == '책':
                 book_description = BookDescription.objects.get(product=product)
 
-                detailed_description = dict(
-                                            title      = book_description.title,
-                                            publisher  = book_description.publisher,
-                                            size_mm    = book_description.size_mm,
-                                            total_page = book_description.total_page
-                                        )
+                detailed_description = {
+                                        'title'     : book_description.title,
+                                        'publisher' : book_description.publisher,
+                                        'size_mm'   : book_description.size_mm,
+                                        'total_page': book_description.total_page
+                                    }
             else:
                 product_description = ProductDescription.objects.get(product=product)
 
-                detailed_description = dict(
-                                            name                = product_description.name,
-                                            material            = product_description.material,
-                                            size_cm             = product_description.size_cm,
-                                            manufacture_country = product_description.manufacture_country,
-                                            caution             = product_description.caution
-                                        )           
+                detailed_description = {
+                                        'name'               : product_description.name,
+                                        'material'           : product_description.material,
+                                        'size_cm'            : product_description.size_cm,
+                                        'manufacture_country': product_description.manufacture_country,
+                                        'caution'            : product_description.caution
+                                        }           
 
             product_inquiries = ProductInquiry.objects.filter(product=product)
 
             # TODO: add review contents
-            results = dict(
-                        category_name        = category_name,
-                        product_name         = product_name,
-                        product_price        = product_price,
-                        discount_rate        = int(discount_rate),
-                        discounted_price     = int(discounted_price),
-                        product_thumbnail    = product_thumbnail,
-                        product_stock        = product_stock,
-                        images_list          = [product_image.image_url for product_image in product_images],
-                        options_list         = [dict(
-                                                     option_name             = product_option.option.name,
-                                                     option_classification   = product_option.option.classification,
-                                                     option_stock            = product_option.stock,
-                                                     option_additional_price = float(product_option.additional_price),
-                                                     product_option_id       = product_option.id
-                                                ) for product_option in products_options],
-                        detailed_description = detailed_description,
-                        inquiries_list       = [dict(
-                                                     product_inquiry_content=product_inquiry.content,
-                                                     product_inquiry_username=product_inquiry.user.username
-                                                ) for product_inquiry in product_inquiries],
-                        reviews_list         = ''
-                        )
+            results = {
+                        'category_name'    : category_name,
+                        'product_name'     : product_name,
+                        'product_price'    : product_price,
+                        'discount_rate'    : int(discount_rate),
+                        'discounted_price' : int(discounted_price),
+                        'product_thumbnail': product_thumbnail,
+                        'product_stock'    : product_stock,
+                        'images_list'      : [product_image.image_url for product_image in product_images],
+                        'options_list'     : [
+                                                {
+                                                 'option_name'            : product_option.option.name,
+                                                 'option_classification'  : product_option.option.classification,
+                                                 'option_stock'           : product_option.stock,
+                                                 'option_additional_price': float(product_option.additional_price),
+                                                 'product_option_id'      : product_option.id
+                                                } for product_option in products_options],
+                        'detailed_description': detailed_description,
+                        'inquiries_list'      : [
+                                                {
+                                                'product_inquiry_content' : product_inquiry.content,
+                                                'product_inquiry_username': product_inquiry.user.username
+                                                } for product_inquiry in product_inquiries],
+                        'reviews_list': ''
+                        }
             
             return JsonResponse(results, status=200) 
 
