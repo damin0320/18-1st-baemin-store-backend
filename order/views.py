@@ -43,7 +43,8 @@ class WishListView(View):
                     product           = product.name,
                     product_thumnail  = product.thumbnail_image_url,
                     user_id           = wishlist.user.id,
-                    product_option_id = wishlist.product_option.id
+                    product_option_id = wishlist.product_option.id,
+                    price             = product.price
                 )
                 result.append(my_dict)
             return JsonResponse({'result' : result}, status=200)
