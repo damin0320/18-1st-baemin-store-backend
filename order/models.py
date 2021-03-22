@@ -18,21 +18,23 @@ class Order(models.Model):
         db_table = 'orders'
 
 
-class Cart(models.Model):
-    quantity = models.IntegerField(default=1)
-    product  = models.ForeignKey('product.Product', on_delete=models.CASCADE)
-    order    = models.ForeignKey('Order', on_delete=models.CASCADE)
+class Cart(models.Model): 
+    quantity       = models.IntegerField(default=1)
+    product        = models.ForeignKey('product.Product', on_delete=models.CASCADE)
+    order          = models.ForeignKey('Order', on_delete=models.CASCADE)
+    product_option = models.ForeignKey('product.ProductOption', on_delete=models.CASCADE, null=True)
 
     class Meta:
         db_table = 'carts'
-        unique_together = ('product', 'order')
+        unique_together = ('product', 'order', 'product_option')
 
 
 class WishList(models.Model):
-    quantity = models.IntegerField(default=1)
-    product  = models.ForeignKey('product.Product', on_delete=models.CASCADE)
-    user     = models.ForeignKey('user.User', on_delete=models.CASCADE)
+    quantity       = models.IntegerField(default=1)
+    product        = models.ForeignKey('product.Product', on_delete=models.CASCADE)
+    user           = models.ForeignKey('user.User', on_delete=models.CASCADE)
+    product_option = models.ForeignKey('product.ProductOption', on_delete=models.CASCADE, null=True)
 
     class Meta:
         db_table = 'wishlist'
-        unique_together = ('product', 'user')
+        unique_together = ('product', 'user', 'product_option')
