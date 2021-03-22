@@ -35,9 +35,13 @@ class WishListView(View):
         result = list()
         try:
             for wishlist in wishlists:
+                product = wishlist.product
+                # product 직접 접근 가능
                 my_dict = dict(
                     quantity          = wishlist.quantity,
-                    product_id        = wishlist.product.id,
+                    product_id        = product.id,
+                    product           = product.name,
+                    product_thumnail  = product.thumbnail_image_url,
                     user_id           = wishlist.user.id,
                     product_option_id = wishlist.product_option.id
                 )
