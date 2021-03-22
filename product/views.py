@@ -6,7 +6,11 @@ from django.db.utils import DataError
 from django.views    import View
 from django.http     import JsonResponse
 
-from .models import Product, Category, SubCategory, Option, ProductOption, DiscountRate, BookDescription, ProductDescription
+from .models import (
+                     Product, Category, SubCategory,
+                     Option, ProductOption, DiscountRate,
+                     BookDescription, ProductDescription
+                )
 
 
 # TODO: Input filtering logic (type, length ...)
@@ -26,17 +30,17 @@ class ProductView(View):
             discount_rate         = data.get('discount_rate', 0)
             option_classification = data.get('option_classification', None)
             
-            category     = Category.objects.get_or_create(name=category_name)[0]
-            sub_category = SubCategory.objects.get_or_create(name=sub_category_name, category=category)[0]
-            product      = Product.objects.create(
-                                                  sub_category        = sub_category,
-                                                  name                = product_name,
-                                                  price               = price,
-                                                  thumbnail_image_url = thumbnail,
-                                                  stock               = stock
+            category    , _ = Category.objects.get_or_create(name=category_name)
+            sub_category, _ = SubCategory.objects.get_or_create(name=sub_category_name, category=category)
+            product         = Product.objects.create(
+                                                     sub_category        = sub_category,
+                                                     name                = product_name,
+                                                     price               = price,
+                                                     thumbnail_image_url = thumbnail,
+                                                     stock               = stock
                                                 )
             
-            if sub_category == 'book':
+            if sub_category.name == 'book':
                 publisher  = data['publisher']
                 total_page = data['total_page']
                 size_mm    = data.get('size_mm', None)
@@ -66,10 +70,10 @@ class ProductView(View):
             if option_classification:
                 options = data['options']
                 for option in options:
-                    option_obj = Option.objects.get_or_create(
-                                                       classification = option_classification,
-                                                       name           = option['option_name']
-                                                    )[0]
+                    option_obj, _ = Option.objects.get_or_create(
+                                                                 classification = option_classification,
+                                                                 name           = option['option_name']
+                                                            )
 
                     ProductOption.objects.create(
                                                  sub_category     = sub_category,
