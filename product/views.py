@@ -40,6 +40,9 @@ class ProductView(View):
                                                      stock               = stock
                                                 )
             
+            for image in images:
+                ProductImage.objects.create(product=product, image_url=image)
+                
             if sub_category.name == 'book':
                 publisher  = data['publisher']
                 total_page = data['total_page']
