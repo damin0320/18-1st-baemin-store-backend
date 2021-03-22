@@ -26,13 +26,14 @@ class Order(models.Model):
 
 class Cart(models.Model): 
     quantity       = models.IntegerField(default=1)
+    user           = models.ForeignKey('user.User', on_delete=models.CASCADE)    
     product        = models.ForeignKey('product.Product', on_delete=models.CASCADE)
     order          = models.ForeignKey('Order', on_delete=models.CASCADE)
     product_option = models.ForeignKey('product.ProductOption', on_delete=models.CASCADE, null=True)
 
     class Meta:
         db_table = 'carts'
-        unique_together = ('product', 'order', 'product_option')
+        unique_together = ('user', 'product', 'order', 'product_option')
 
 
 class WishList(models.Model):
