@@ -53,8 +53,8 @@ class CartView(View):
         except KeyError:
             return JsonResponse({'message': 'KEY_ERROR'}, status=400)
 
-    def get(self, request):
-        try:
-            user_id = USER_ID
-        except:
-            pass
+    # def get(self, request):
+    #     try:
+    #         user_id = USER_ID
+
+        
