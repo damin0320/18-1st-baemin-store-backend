@@ -4,7 +4,12 @@ from json import JSONDecodeError
 from django.views import View
 from django.http  import JsonResponse
 
-from .models      import Category, SubCategory, Product, ProductImage, ProductDescription, BookDescription, DiscountRate, Option, ProductOption, Review, ProductInquiry
+from .models import (
+                     Category, SubCategory, Product,
+                     ProductImage, ProductDescription, BookDescription,
+                     DiscountRate, Option, ProductOption,
+                     Review, ProductInquiry
+                )
 from user.models  import User
 from order.models import Order
 
@@ -19,11 +24,11 @@ class CategoryView(View):
             for sub_category in sub_categories:
                 products = Product.objects.filter(sub_category=sub_category)
                 products_obj_list += list(products)
-
+            
             products_list = list()
             for product in products_obj_list:
                 discount_rate    = float(DiscountRate.objects.get(product=product).rate * 100)
-                discounted_price = product.price - product.price * (discount_rate / 100)
+                discounted_price = float(product.price) - (float(product.price) * (discount_rate / 100))
 
                 product_dict = {
                                 'product_id'       : product.id,
