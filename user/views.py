@@ -95,34 +95,45 @@ class SignUpView(View):
 
 
 class WishListView(View):
+    @auth_check
     @transaction.atomic
     def post(self, request):
         try:
-            data = json.loads(request.body)
+            results = json.loads(request.body)['results']
+            user_id = request.user.id
             
-            user = User.objects.get(username=data['username'])
-            
-            wishlist, is_created = WishList.objects.get_or_create(
-                
-            quantity          = data['quantity'],
-            product_id        = data['product_id'],
-            product_option_id = data['product_option_id'],
-            user              = user,
-            )
+            for result in results:
+                product_id              = result['product_id']
+                quantity                = result['quantity']
+                product_option_id       = result['product_option_id']
+                product_option_quantity = result['product_option_quantity']
+                            
+                if product_option_id:
+                    wishlist, is_created = WishList.objects.get_or_create(
+                    product_id        = product_id,
+                    product_option_id = product_option_id,
+                    user_id           = user_id,
+                    defaults          = {'quantity': product_option_quantity}
+                    )
+                    if not is_created:
+                        wishlist.quantity += product_option_quantity
+                        wishlist.save()
+                else:
+                    wishlist, is_created = WishList.objects.get_or_create(
+                    product_id = product_id,
+                    user_id    = user_id,
+                    defaults   = {'quantity': quantity}
+                    )
 
-            if is_created is False:
-                wishlist.quantity += data['quantity']
-                wishlist.save()
-            else:
-                return wishlist
-                
+                    if not is_created:
+                        wishlist.quantity += quantity
+                        wishlist.save()      
             return JsonResponse({'message' : 'SUCCESS'}, status=201)
+        
         except JSONDecodeError:
             return JsonResponse({'message' : 'JSON_DECODE_ERROR'}, status=400)
         except KeyError:
-            return JsonResponse({'message' : 'KEY_ERROR'}, status=400)
-        except WishList.DoesNotExist:
-            return JsonResponse({'message' : 'WISHLIST_DOES_NOT_EXIST'}, status=404)    
+            return JsonResponse({'message' : 'KEY_ERROR'}, status=400)  
 
     @auth_check
     def get(self, request):        
@@ -134,15 +145,17 @@ class WishListView(View):
                 'user_id'           : wishlist.user.id,
                 'product_option_id' : wishlist.product_option.id,
                 'product_id'        : wishlist.product_id,
-                'product'           : wishlist.product.name,
-               'product_thumnail'   : wishlist.product.thumbnail_image_url,
-                'price'             : wishlist.product.price,
+                'product_name'      : wishlist.product.name,
+                'product_thumnail'  : wishlist.product.thumbnail_image_url,
+                'product_price'     : wishlist.product.price if not wishlist.product_option else wishlist.product.price + wishlist.product_option.additional_price ,
+                'total_price': wishlist.quantity * wishlist.product.price if not wishlist.product_option\
+                               else wishlist.quantity * (wishlist.product.price + wishlist.product_option.additional_price),
+                'product_option_classification': wishlist.product_option.option.classification,
+                'product_option_name': wishlist.product_option.option.name
                 } for wishlist in wishlists]
-
             return JsonResponse({'result' : results}, status=200)
+        
         except JSONDecodeError:
             return JsonResponse({'message' : 'JSON_DECODE_ERROR'}, status=400)
         except KeyError:
             return JsonResponse({'message' : 'KEY_ERROR'}, status=400)
-        except WishList.DoesNotExist:
-            return JsonResponse({'message' : 'WISHLIST_DOES_NOT_EXIST'}, status=404)
