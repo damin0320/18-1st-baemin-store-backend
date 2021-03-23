@@ -106,22 +106,15 @@ class WishListView(View):
                 
             quantity          = data['quantity'],
             product_id        = data['product_id'],
-            user              = user,
             product_option_id = data['product_option_id'],
+            user              = user,
             )
 
-                # wishlist, is_created = WishList.objects.get_or_create(
-                # quantity   = data['quantity'],
-                # product_id = data['product_id'],
-                # user       = user,
-                # options    = data['product_option_id', 'product_option_quantity'],
-                # )
             if is_created is False:
                 wishlist.quantity += data['quantity']
                 wishlist.save()
             else:
                 return wishlist
-            # 중복값 해결
                 
             return JsonResponse({'message' : 'SUCCESS'}, status=201)
         except JSONDecodeError:
@@ -135,16 +128,16 @@ class WishListView(View):
     def get(self, request):        
         wishlists = WishList.objects.filter(user_id=request.user.id)
         try:
-            results = [dict(
-                point             = wishlist.user.point,                
-                quantity          = wishlist.quantity,
-                user_id           = wishlist.user.id,
-                product_option_id = wishlist.product_option.id,
-                product_id        = wishlist.product_id,
-                product           = wishlist.product.name,
-                product_thumnail  = wishlist.product.thumbnail_image_url,
-                price             = wishlist.product.price,
-                ) for wishlist in wishlists]
+            results = [{
+                'point'             : wishlist.user.point,                
+                'quantity'          : wishlist.quantity,
+                'user_id'           : wishlist.user.id,
+                'product_option_id' : wishlist.product_option.id,
+                'product_id'        : wishlist.product_id,
+                'product'           : wishlist.product.name,
+               'product_thumnail'   : wishlist.product.thumbnail_image_url,
+                'price'             : wishlist.product.price,
+                } for wishlist in wishlists]
 
             return JsonResponse({'result' : results}, status=200)
         except JSONDecodeError:
