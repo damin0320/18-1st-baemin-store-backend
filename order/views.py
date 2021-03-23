@@ -1,9 +1,10 @@
 import json
 from json import JSONDecodeError
 
-from django.views import View
-from django.http  import JsonResponse
-from django.db    import transaction
+from django.views     import View
+from django.http      import JsonResponse
+from django.db        import transaction
+from django.db.models import Q
 
 from .models          import Order, OrderStatus, Cart
 from product.models   import Product, ProductOption
@@ -16,20 +17,22 @@ class CartView(View):
     def post(self, request):
         try:
             results    = json.loads(request.body)['results']
-            product_id = results[0]['product_id']
 
             before_purchase, _ = OrderStatus.objects.get_or_create(id=1, status='구매전')
-            order, _           = Order.objects.get_or_create(user=reqeust.user, order_status=before_purchase)
-            product            = Product.objects.get(id=product_id)
-            
+            order, _           = Order.objects.get_or_create(user=request.user, order_status=before_purchase)
+
+            if not results:
+                return JsonResponse({'message': 'OPTION_NOT_SELECTED'}, status=400)
+
             for result in results:
+                product_id              = result['product_id']
                 quantity                = result['quantity']
                 product_option_id       = result['product_option_id']
                 product_option_quantity = result['product_option_quantity']
 
                 if product_option_id:
                     cart, is_created = Cart.objects.get_or_create(
-                                                                  product           = product,
+                                                                  product_id        = product_id,
                                                                   order             = order,
                                                                   product_option_id = product_option_id,
                                                                   defaults          = {'quantity': product_option_quantity}
@@ -39,9 +42,9 @@ class CartView(View):
                         cart.save()
                 else:
                     cart, is_created = Cart.objects.get_or_create(
-                                                                  product  = product,
-                                                                  order    = order,
-                                                                  defaults = {'quantity': quantity}
+                                                                  product_id = product_id,
+                                                                  order      = order,
+                                                                  defaults   = {'quantity': quantity}
                                                                 )
                     if not is_created:
                         cart.quantity += quantity
@@ -58,9 +61,12 @@ class CartView(View):
     @auth_check
     def get(self, request):
         try:
-            order = Order.objects.get(user=request.user, order_status_id=1)
+            order_before_purchase = Order.objects.get(user=request.user, order_status_id=1)
+            order_pending_purchase = Order.objects.filter(user=request.user, order_status=2).first()
 
-            carts     = order.cart_set.all()
+            # 구매전, 결제중(결제페이지 이동했던 상품들) 상품들 모두 장바구니에 담는다.
+            # 장바구니 페이지에서 목록 삭제 가능
+            carts     = list(order_before_purchase.cart_set.all()) + list(order_pending_purchase.cart_set.all())
             cart_list = [
                          {'product_id'                   : cart.product.id,
                           'product_thumbnail'            : cart.product.thumbnail_image_url,
@@ -79,5 +85,49 @@ class CartView(View):
             return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
         except KeyError:
             return JsonResponse({'message': 'KEY_ERROR'}, status=400)
+        except Order.DoesNotExist:
+            return JsonResponse({'message': 'CART_IS_EMPTY'}, status=404)
 
-    
+
+class SelectCartView(View):
+    @transaction.atomic
+    @auth_check
+    def post(self, request):
+        try:
+            results = json.loads(request.body)
+            
+            results    = json.loads(request.body)['results']
+
+            before_purchase, _  = OrderStatus.objects.get_or_create(id=1, status='구매전')
+            pending_purchase, _ = OrderStatus.objects.get_or_create(id=2, status='결제중')
+
+            order_before_purchase, _  = Order.objects.get_or_create(user=request.user, order_status=before_purchase)
+            order_pending_purchase, _ = Order.objects.get_or_create(user=request.user, order_status=pending_purchase)
+
+            for result in results:
+                product_id              = result['product_id']
+                product_option_id       = result['product_option_id']
+
+                if product_option_id:
+                    cart = Cart.objects.get(
+                                            Q(product_id        = product_id,
+                                              product_option_id = product_option_id) & 
+                                            (Q(order=order_before_purchase) | Q(order=order_pending_purchase)) 
+                                        )
+                    cart.order = order_pending_purchase
+                    cart.save()
+                else:
+                    cart = Cart.objects.get(
+                                            Q(product_id = product_id) & 
+                                            (Q(order=order_before_purchase) | Q(order=order_pending_purchase)) 
+                                        )
+                    cart.order = order_pending_purchase
+                    cart.save()
+            return JsonResponse({'message': 'SUCCESS'}, status=201)
+
+        except JSONDecodeError:
+            return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
+        except KeyError:
+            return JsonResponse({'message': 'KEY_ERROR'}, status=400)
+        except Cart.DoesNotExist:
+            return JsonResponse({'message': 'CART_DOES_NOT_EXIST'}, status=404)
