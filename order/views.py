@@ -5,9 +5,9 @@ from django.views import View
 from django.http  import JsonResponse
 from django.db    import transaction
 
-from .models        import Order, OrderStatus, Cart
-from product.models import Product, ProductOption
-
+from .models          import Order, OrderStatus, Cart
+from product.models   import Product, ProductOption
+from utils.decorators import user_check, auth_check
 
 USER_ID = 2
 
@@ -53,8 +53,6 @@ class CartView(View):
         except KeyError:
             return JsonResponse({'message': 'KEY_ERROR'}, status=400)
 
-    # def get(self, request):
-    #     try:
-    #         user_id = USER_ID
-
+    def get(self, request):
+        pass
         
