@@ -8,9 +8,7 @@ from django.db    import transaction
 from .models        import Order, OrderStatus, Cart
 from product.models import Product, ProductOption
 
-PRODUCT_OPTION_ID = 1
-PRODUCT_ID = 5
-QUANTITY = 2
+
 USER_ID = 2
 
 
@@ -31,9 +29,9 @@ class CartView(View):
                 for option in options:
                     cart, is_created = Cart.objects.get_or_create(
                                                                   product_id        = product_id,
-                                                                  order             = order,                                                                  
+                                                                  order             = order,
                                                                   product_option_id = option['product_option_id'],
-                                                                  defaults={'quantity': option['product_option_quantity']}
+                                                                  defaults          = {'quantity': option['product_option_quantity']}
                                                                 )
                     if not is_created:
                         cart.quantity += option['product_option_quantity']
@@ -54,3 +52,9 @@ class CartView(View):
             return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
         except KeyError:
             return JsonResponse({'message': 'KEY_ERROR'}, status=400)
+
+    def get(self, request):
+        try:
+            user_id = USER_ID
+        except:
+            pass
