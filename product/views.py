@@ -66,6 +66,7 @@ class ProductView(View):
                         'discounted_price' : discounted_price,
                         'product_thumbnail': product_thumbnail,
                         'product_stock'    : product_stock,
+                        'counts'           : 1,
                         'images_list'      : [product_image.image_url for product_image in product_images],
                         'options_list'     : [
                                                 {
