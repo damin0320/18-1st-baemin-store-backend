@@ -17,13 +17,27 @@ class WishListView(View):
             
             user = User.objects.get(username=data['username'])
             
-            wishlist = WishList.objects.create(
-                quantity          = data['quantity'],
-                product_id        = data['product_id'],
-                user              = user,
-                product_option_id = data['product_option_id']
+            wishlist, is_created = WishList.objects.get_or_create(
+                
+            quantity          = data['quantity'],
+            product_id        = data['product_id'],
+            user              = user,
+            product_option_id = data['product_option_id'],
             )
-            return JsonResponse({'message' : 'SUCCESS'}, status=200)
+
+                # wishlist, is_created = WishList.objects.get_or_create(
+                # quantity   = data['quantity'],
+                # product_id = data['product_id'],
+                # user       = user,
+                # options    = data['product_option_id', 'product_option_quantity'],
+                # )
+            if is_created is False:
+                wishlist.quantity += data['quantity']
+                wishlist.save()
+            else:
+                return wishlist
+                
+            return JsonResponse({'message' : 'SUCCESS'}, status=201)
         except JSONDecodeError:
             return JsonResponse({'message' : 'JSON_DECODE_ERROR'}, status=400)
         except KeyError:
@@ -34,23 +48,29 @@ class WishListView(View):
     
     def get(self, request):
         wishlists = WishList.objects.filter(user_id=3)
-        result = list()
         try:
-            for wishlist in wishlists:
-                product = wishlist.product
-                user    = wishlist.user
-                # product 직접 접근 가능
-                my_dict = dict(
-                    quantity          = wishlist.quantity,
-                    product_id        = product.id,
-                    product           = product.name,
-                    product_thumnail  = product.thumbnail_image_url,
-                    user_id           = wishlist.user.id,
-                    product_option_id = wishlist.product_option.id,
-                    price             = product.price,
-                    point             = user.point
-                )
-                result.append(my_dict)
+            result = [dict(
+                point             = user.point,                
+                quantity          = wishlist.quantity,
+                user_id           = wishlist.user.id,
+                product_option_id = wishlist.product_option.id,
+                product_id        = product.id,
+                product           = product.name,
+                product_thumnail  = product.thumbnail_image_url,
+                price             = product.price,
+                ) for wishlist in wishlists]
+                
+                # my_dict = dict(
+                #     quantity          = wishlist.quantity,
+                #     product_id        = product.id,
+                #     product           = product.name,
+                #     product_thumnail  = product.thumbnail_image_url,
+                #     user_id           = wishlist.user.id,
+                #     product_option_id = wishlist.product_option.id,
+                #     price             = product.price,
+                #     point             = user.point
+                # )
+                # result.append(my_dict)
             return JsonResponse({'result' : result}, status=200)
         except JSONDecodeError:
             return JsonResponse({'message' : 'JSON_DECODE_ERROR'}, status=400)
