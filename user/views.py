@@ -121,6 +121,7 @@ class WishListView(View):
                 wishlist.save()
             else:
                 return wishlist
+            # 중복값 해결
                 
             return JsonResponse({'message' : 'SUCCESS'}, status=201)
         except JSONDecodeError:
