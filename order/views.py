@@ -47,31 +47,20 @@ class WishListView(View):
 
     
     def get(self, request):
-        wishlists = WishList.objects.filter(user_id=3)
+        wishlists = WishList.objects.filter(user_id='user_id')
         try:
-            result = [dict(
-                point             = user.point,                
+            results = [dict(
+                point             = wishlist.user.point,                
                 quantity          = wishlist.quantity,
                 user_id           = wishlist.user.id,
                 product_option_id = wishlist.product_option.id,
-                product_id        = product.id,
-                product           = product.name,
-                product_thumnail  = product.thumbnail_image_url,
-                price             = product.price,
+                product_id        = wishlist.product_id,
+                product           = wishlist.product.name,
+                product_thumnail  = wishlist.product.thumbnail_image_url,
+                price             = wishlist.product.price,
                 ) for wishlist in wishlists]
-                
-                # my_dict = dict(
-                #     quantity          = wishlist.quantity,
-                #     product_id        = product.id,
-                #     product           = product.name,
-                #     product_thumnail  = product.thumbnail_image_url,
-                #     user_id           = wishlist.user.id,
-                #     product_option_id = wishlist.product_option.id,
-                #     price             = product.price,
-                #     point             = user.point
-                # )
-                # result.append(my_dict)
-            return JsonResponse({'result' : result}, status=200)
+
+            return JsonResponse({'result' : results}, status=200)
         except JSONDecodeError:
             return JsonResponse({'message' : 'JSON_DECODE_ERROR'}, status=400)
         except KeyError:
