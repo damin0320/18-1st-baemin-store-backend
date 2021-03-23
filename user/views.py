@@ -110,20 +110,20 @@ class WishListView(View):
                             
                 if product_option_id:
                     wishlist, is_created = WishList.objects.get_or_create(
-                    product_id        = product_id,
-                    product_option_id = product_option_id,
-                    user_id           = user_id,
-                    defaults          = {'quantity': product_option_quantity}
-                    )
+                        product_id        = product_id,
+                        product_option_id = product_option_id,
+                        user_id           = user_id,
+                        defaults          = {'quantity': product_option_quantity}
+                        )
                     if not is_created:
                         wishlist.quantity += product_option_quantity
                         wishlist.save()
                 else:
                     wishlist, is_created = WishList.objects.get_or_create(
-                    product_id = product_id,
-                    user_id    = user_id,
-                    defaults   = {'quantity': quantity}
-                    )
+                        product_id = product_id,
+                        user_id    = user_id,
+                        defaults   = {'quantity': quantity}
+                        )
 
                     if not is_created:
                         wishlist.quantity += quantity
@@ -147,11 +147,12 @@ class WishListView(View):
                 'product_id'        : wishlist.product_id,
                 'product_name'      : wishlist.product.name,
                 'product_thumnail'  : wishlist.product.thumbnail_image_url,
-                'product_price'     : wishlist.product.price if not wishlist.product_option else wishlist.product.price + wishlist.product_option.additional_price ,
-                'total_price': wishlist.quantity * wishlist.product.price if not wishlist.product_option\
-                               else wishlist.quantity * (wishlist.product.price + wishlist.product_option.additional_price),
+                'product_price'     : wishlist.product.price if not wishlist.product_option\
+                                      else wishlist.product.price + wishlist.product_option.additional_price ,
+                'total_price'       : wishlist.quantity * wishlist.product.price if not wishlist.product_option\
+                                      else wishlist.quantity * (wishlist.product.price + wishlist.product_option.additional_price),
                 'product_option_classification': wishlist.product_option.option.classification,
-                'product_option_name': wishlist.product_option.option.name
+                'product_option_name'          : wishlist.product_option.option.name
                 } for wishlist in wishlists]
             return JsonResponse({'result' : results}, status=200)
         
