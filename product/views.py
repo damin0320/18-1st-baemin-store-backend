@@ -22,17 +22,17 @@ class CategoryView(View):
 
             products_list = list()
             for product in products_obj_list:
-                discount_rate    = DiscountRate.objects.get(product=product).rate * 100
+                discount_rate    = float(DiscountRate.objects.get(product=product).rate * 100)
                 discounted_price = product.price - product.price * (discount_rate / 100)
 
-                product_dict = dict(
-                                    product_id        = product.id,
-                                    product_name      = product.name,
-                                    product_price     = int(product.price),
-                                    product_thumbnail = product.thumbnail_image_url,
-                                    discount_rate     = int(discount_rate),
-                                    discounted_price  = int(discounted_price)
-                                )
+                product_dict = {
+                                'product_id'       : product.id,
+                                'product_name'     : product.name,
+                                'product_price'    : float(product.price),
+                                'product_thumbnail': product.thumbnail_image_url,
+                                'discount_rate'    : discount_rate,
+                                'discounted_price' : discounted_price
+                                }
                 products_list.append(product_dict)
             return JsonResponse({'results': products_list}, status=200)
 
