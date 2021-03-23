@@ -7,7 +7,7 @@ from json import JSONDecodeError
 from django.views import View
 from django.http  import JsonResponse
 
-from .models     import User
+from .models     import User, Coupon, UserCoupon
 from my_settings import SECRET_KEY, HASHING_ALGORITHM
 
 
@@ -88,3 +88,27 @@ class SignUpView(View):
             return JsonResponse({'message': 'KEY_ERROR'}, status=400)
         except JSONDecodeError:
             return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
+
+class CouponView(View):
+    def post(self, request):
+        try:
+            data           = json.loads(request.body)
+            name           = data['name']
+            discount_price = data['discount_price']
+            issue_date     = data['issue_date']
+            expire_date    = data['expire_date']
+            
+            coupons = Coupon.objects.create(
+                name = name,
+                discount_price = discount_price,
+                issue_date = issue_date,
+                expire_date = expire_date
+            )
+            return JsonResponse({'message' : 'SUCCESS'}, status=201)
+        except KeyError:
+            return JsonResponse({'message' : 'KEY_ERROR'}, status=400)
+        except JSONDecodeError:
+            return JsonResponse({'message' : 'JSON_DECODE_ERROR'}, status=400)      
+
+    def post(self, request):
+        
