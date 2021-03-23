@@ -60,6 +60,7 @@ class ProductView(View):
             # TODO: add review contents
             results = {
                         'category_name'    : category_name,
+                        'product_id'       : product_id,
                         'product_name'     : product_name,
                         'product_price'    : product_price,
                         'discount_rate'    : discount_rate,
