@@ -97,7 +97,6 @@ class CouponView(View):
             discount_price = data['discount_price']
             issue_date     = data['issue_date']
             expire_date    = data['expire_date']
-            
             coupons = Coupon.objects.create(
                 name = name,
                 discount_price = discount_price,
@@ -111,4 +110,23 @@ class CouponView(View):
             return JsonResponse({'message' : 'JSON_DECODE_ERROR'}, status=400)      
 
     def post(self, request):
-        
+        try:
+            data = json.loads(request.body)
+            coupon = Coupon.objects.get(id=data['coupon_id']).id
+            user = User.objects.get(id=data['user_id']).id
+            quantity = data['quantity']
+
+            
+            user_coupon, is_created = UserCoupon.objects.get_or_create(
+            coupon_id = coupon,
+            user_id = user,
+            defaults = {'quantity' : quantity}
+            )
+            if not is_created:
+                user_coupon.quantity += data['quantity']
+                user_coupon.save()
+            return JsonResponse({'message' : 'SUCCESS'}, status=201)
+        except KeyError:
+            return JsonResponse({'message' : 'KEY_ERROR'}, status=400)
+        except JSONDecodeError:
+            return JsonResponse({'message' : 'JSON_DECODE_ERROR'}, status=400)
