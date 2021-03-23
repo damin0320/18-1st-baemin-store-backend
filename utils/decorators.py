@@ -11,9 +11,8 @@ from baemin_store.settings import SECRET_KEY, HASHING_ALGORITHM
 # auth check with blocking
 def auth_check(func):
     def wrapper(self, request):
-        data = request.headers
         try:
-            token = data.get('Authorization')
+            token = request.headers.get('Authorization')
             if not token:
                 return JsonResponse({'message': 'TOKEN_DOSE_NOT_EXIST'})
             decoded_auth_token = jwt.decode(token, SECRET_KEY, algorithms=HASHING_ALGORITHM)
@@ -37,9 +36,8 @@ def auth_check(func):
 # user check without blocking 
 def user_check(func):
     def wrapper(self, request):
-        data = request.headers
         try:
-            token = data.get('Authorization')
+            token = request.headers.get('Authorization')
             if not token:
                 request.user = None
                 return func(self, request)
