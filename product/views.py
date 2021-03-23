@@ -19,14 +19,18 @@ from order.models import Order
 class CategoryView(View):
     def get(self, request, category_name):
         try:
-            category       = Category.objects.get(name=category_name)
-            sub_categories = SubCategory.objects.filter(category=category)
+            if not category_name == '전체':        
+                category = Category.objects.get(name=category_name)
+                sub_categories = SubCategory.objects.filter(category=category)
 
-            products_obj_list = list()
-            for sub_category in sub_categories:
-                products = Product.objects.filter(sub_category=sub_category)
-                products_obj_list += list(products)
+                products_obj_list = list()
+                for sub_category in sub_categories:
+                    products = Product.objects.filter(sub_category=sub_category)
+                    products_obj_list += list(products)
+            else:
+                products_obj_list = Product.objects.all()
             
+            print(products_obj_list)
             products_list = list()
             for product in products_obj_list:
                 discount_rate    = float(DiscountRate.objects.get(product=product).rate * 100)
@@ -38,7 +42,8 @@ class CategoryView(View):
                                 'product_price'    : float(product.price),
                                 'product_thumbnail': product.thumbnail_image_url,
                                 'discount_rate'    : discount_rate,
-                                'discounted_price' : discounted_price
+                                'discounted_price' : discounted_price,
+                                'stock'            : product.stock
                                 }
                 products_list.append(product_dict)
             return JsonResponse({'results': products_list}, status=200)
