@@ -100,6 +100,7 @@ class WishListView(View):
     def post(self, request):
         try:
             results = json.loads(request.body)['results']
+            print(results)
             user_id = request.user.id
             
             for result in results:
@@ -155,8 +156,6 @@ class WishListView(View):
                 'product_option_name'          : wishlist.product_option.option.name
                 } for wishlist in wishlists]
             return JsonResponse({'result' : results}, status=200)
-        
-        except JSONDecodeError:
-            return JsonResponse({'message' : 'JSON_DECODE_ERROR'}, status=400)
+
         except KeyError:
             return JsonResponse({'message' : 'KEY_ERROR'}, status=400)
