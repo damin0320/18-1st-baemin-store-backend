@@ -90,7 +90,7 @@ class SignUpView(View):
         except JSONDecodeError:
             return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
 
-class CouponView(View):
+class CouponRegistryView(View):
     def post(self, request):
         try:
             data           = json.loads(request.body)
@@ -110,6 +110,8 @@ class CouponView(View):
         except JSONDecodeError:
             return JsonResponse({'message' : 'JSON_DECODE_ERROR'}, status=400)      
 
+
+class UserCouponView(View):
     def post(self, request):
         try:
             data     = json.loads(request.body)
@@ -131,7 +133,9 @@ class CouponView(View):
             return JsonResponse({'message' : 'KEY_ERROR'}, status=400)
         except JSONDecodeError:
             return JsonResponse({'message' : 'JSON_DECODE_ERROR'}, status=400)
-    
+        
+        
+class  SubCategoryCouponView(View):   
     def post(self, request):
         try:
             data         = json.loads(request.body)
