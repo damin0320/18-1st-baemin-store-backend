@@ -123,6 +123,7 @@ class CouponRegistryView(View):
 
 
 class UserCouponView(View):
+    @transaction.atomic
     @auth_check    
     def post(self, request):
         try:
