@@ -99,36 +99,30 @@ class WishListView(View):
     @transaction.atomic
     def post(self, request):
         try:
-            results = json.loads(request.body)['results']
-            print(results)
-            user_id = request.user.id
-            
-            for result in results:
-                product_id              = result['product_id']
-                quantity                = result['quantity']
-                product_option_id       = result['product_option_id']
-                product_option_quantity = result['product_option_quantity']
-                            
-                if product_option_id:
-                    wishlist, is_created = WishList.objects.get_or_create(
-                        product_id        = product_id,
-                        product_option_id = product_option_id,
-                        user_id           = user_id,
-                        defaults          = {'quantity': product_option_quantity}
-                        )
-                    if not is_created:
-                        wishlist.quantity += product_option_quantity
-                        wishlist.save()
-                else:
-                    wishlist, is_created = WishList.objects.get_or_create(
-                        product_id = product_id,
-                        user_id    = user_id,
-                        defaults   = {'quantity': quantity}
-                        )
+            data                    = json.loads(request.body)['results']
+            user_id                 = request.user.id
+            product_option_quantity = data['product_option_quantity']
+                        
+            if product_option_id:
+                wishlist, is_created = WishList.objects.get_or_create(
+                    product_id        = data['product_id'],
+                    product_option_id = data['product_option_id'],
+                    user_id           = user_id,
+                    defaults          = {'quantity': data['quantity']}
+                    )
+                if not is_created:
+                    wishlist.quantity += product_option_quantity
+                    wishlist.save()
+            else:
+                wishlist, is_created = WishList.objects.get_or_create(
+                    product_id = product_id,
+                    user_id    = user_id,
+                    defaults   = {'quantity': quantity}
+                    )
 
-                    if not is_created:
-                        wishlist.quantity += quantity
-                        wishlist.save()      
+                if not is_created:
+                    wishlist.quantity += quantity
+                    wishlist.save()      
             return JsonResponse({'message' : 'SUCCESS'}, status=201)
         
         except JSONDecodeError:
