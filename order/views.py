@@ -161,6 +161,8 @@ class SelectCartView(View):
                           'product_option_classification': cart.product_option.option.classification if cart.product_option else '',
                           'product_option_name'          : cart.product_option.option.name if cart.product_option else ''
                         } for cart in carts]
+            
+            return JsonResponse({'results': cart_list}, status=200)
 
         except JSONDecodeError:
             return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
