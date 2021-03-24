@@ -24,6 +24,7 @@ class CartView(View):
             order, _           = Order.objects.get_or_create(user=request.user, order_status=before_purchase)
 
             if not results:
+                transaction.set_rollback(True)
                 return JsonResponse({'message': 'OPTION_NOT_SELECTED'}, status=400)
 
             for result in results:
@@ -56,14 +57,17 @@ class CartView(View):
         except JSONDecodeError:
             return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
         except KeyError:
+            transaction.set_rollback(True)
             return JsonResponse({'message': 'KEY_ERROR'}, status=400)
         except Product.DoesNotExist:
+            transaction.set_rollback(True)
             return JsonResponse({'message': 'PRODUCT_DOES_NOT_EXIST'}, status=404)
         except TypeError:
+            transaction.set_rollback(True)
             return JsonResponse({'message': 'TYPE_ERROR'}, status=400)
         except IntegrityError:
+            transaction.set_rollback(True)
             return JsonResponse({'message': 'INTEGRITY_ERROR'}, status=400)
-
 
     @auth_check
     def get(self, request):
@@ -131,8 +135,10 @@ class CartView(View):
         except JSONDecodeError:
             return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
         except KeyError:
+            transaction.set_rollback(True)
             return JsonResponse({'message': 'KEY_ERROR'}, status=400)
         except Cart.DoesNotExist:
+            transaction.set_rollback(True)
             return JsonResponse({'message': 'CART_DOES_NOT_EXIST'}, status=404)
     
 
@@ -193,8 +199,10 @@ class SelectCartView(View):
         except JSONDecodeError:
             return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
         except KeyError:
+            transaction.set_rollback(True)
             return JsonResponse({'message': 'KEY_ERROR'}, status=400)
         except Cart.DoesNotExist:
+            transaction.set_rollback(True)
             return JsonResponse({'message': 'CART_DOES_NOT_EXIST'}, status=404)
     
 
@@ -314,6 +322,8 @@ class OrderView(View):
                                                                                     )
             
             if request.user.point < user_detail['point_used']:
+                transaction.set_rollback(True)
+
                 return JsonResponse({'message': 'NOT_ENOUGH_POINT'}, status=400)
             User.objects.filter(id=request.user.id).update(point=request.user.point - user_detail['point_used'])
 
