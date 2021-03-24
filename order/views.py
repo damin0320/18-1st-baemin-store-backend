@@ -261,13 +261,13 @@ class OrderView(View):
             
             # 장바구니("구매전")에 담아야 결제페이지 까지 올 수 있기 때문에
             # 이미 order_status 테이블에 "구매전" 이 있을 것이기 때문에 get 으로 처리함
+
             before_purchase          = OrderStatus.objects.get(id=1)
             order_before_purchase, _ = Order.objects.get_or_create(user=request.user, order_status=before_purchase) 
 
             delivery_done, _    = OrderStatus.objects.get_or_create(id=3, status='배송완료')
             order_delivery_done = Order.objects.create(user=request.user, order_status=delivery_done)
 
-            print(products)
             for product in products:
                 if product['product_option_id']:
                     cart = Cart.objects.get(
@@ -276,6 +276,8 @@ class OrderView(View):
                                             order_id          = product['order_id']
                                         )
                     if cart.product_option.stock - cart.quantity < 0:
+                        transaction.set_rollback(True)
+
                         cart.order = order_before_purchase
                         cart.save()
                         return JsonResponse({'message': '{}, 재고가 없습니다.'.format(cart.product.name)}, status=400)
@@ -289,7 +291,9 @@ class OrderView(View):
                                             product_id = product['product_id'],
                                             order_id   = product['order_id']
                                         )
-                    if cart.product.stock - cart.quantity < 0: 
+                    if cart.product.stock - cart.quantity < 0:
+                        transaction.set_rollback(True)
+
                         cart.order = order_before_purchase
                         cart.save()
                         return JsonResponse({'message': '{}, 재고가 없습니다.'.format(cart.product.name)}, status=400)
@@ -301,13 +305,12 @@ class OrderView(View):
                 cart.save()
 
             Order.objects.filter(user=request.user, order_status=delivery_done).update(
-                                                                                        receiver_name=receiver['name'],
-                                                                                        phone_number=receiver['phone_number'],
-                                                                                        email=receiver['email'],
-                                                                                        delivery_address=receiver['delivery_address'],
-                                                                                        postal_code=receiver['postal_code'],
-                                                                                        detailed_address=receiver['detailed_address'],
-                                                                                        customor_message=receiver['customor_message']
+                                                                                       receiver_name    = receiver['name'],
+                                                                                       phone_number     = receiver['phone_number'],
+                                                                                       delivery_address = receiver['delivery_address'],
+                                                                                       postal_code      = receiver['postal_code'],
+                                                                                       detailed_address = receiver['detailed_address'],
+                                                                                       customor_message = receiver['customor_message']
                                                                                     )
             
             if request.user.point < user_detail['point_used']:
@@ -325,7 +328,9 @@ class OrderView(View):
 
         except JSONDecodeError:
             return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
-        # except KeyError:
-        #     return JsonResponse({'message': 'KEY_ERROR'}, status=400)
+        except KeyError:
+            transaction.set_rollback(True)
+            return JsonResponse({'message': 'KEY_ERROR'}, status=400)
         except Cart.DoesNotExist:
+            transaction.set_rollback(True)
             return JsonResponse({'message': 'CART_DOES_NOT_EXIST'}, status=404)
