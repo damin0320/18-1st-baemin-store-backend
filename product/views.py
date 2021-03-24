@@ -13,14 +13,17 @@ from .models import (
                      Review, ProductInquiry
                 )
 from user.models  import User
-from order.models import Order
+from order.models import Order, WishList
+
+from utils.decorators import user_check
 
 
 class CategoryView(View):
+    @user_check
     def get(self, request, category_name):
         try:
             if not category_name == '전체':        
-                category = Category.objects.get(name=category_name)
+                category       = Category.objects.get(name=category_name)
                 sub_categories = SubCategory.objects.filter(category=category)
 
                 products_obj_list = list()
@@ -30,11 +33,12 @@ class CategoryView(View):
             else:
                 products_obj_list = Product.objects.all()
             
-            print(products_obj_list)
             products_list = list()
             for product in products_obj_list:
                 discount_rate    = float(DiscountRate.objects.get(product=product).rate * 100)
                 discounted_price = float(product.price) - (float(product.price) * (discount_rate / 100))
+                
+                is_in_wishlist   = 1 if WishList.objects.filter(user=request.user).exists() else 0
 
                 product_dict = {
                                 'product_id'       : product.id,
@@ -43,7 +47,8 @@ class CategoryView(View):
                                 'product_thumbnail': product.thumbnail_image_url,
                                 'discount_rate'    : discount_rate,
                                 'discounted_price' : discounted_price,
-                                'stock'            : product.stock
+                                'stock'            : product.stock,
+                                'is_in_wishlist'   : is_in_wishlist
                                 }
                 products_list.append(product_dict)
             return JsonResponse({'results': products_list}, status=200)
@@ -224,3 +229,31 @@ class ProductRegistryView(View):
             return JsonResponse({'message': 'INTEGRITY_ERROR'}, status=400)
         except DataError:
             return JsonResponse({'message': 'DATA_ERROR'}, status=400)
+
+
+class MainPageView(View):
+    @user_check
+    def post(self, request):
+        try:
+            products_obj_list = Product.objects.all()
+            
+            products_list = list()
+            for product in products_obj_list:
+                discount_rate    = float(DiscountRate.objects.get(product=product).rate * 100)
+                discounted_price = float(product.price) - (float(product.price) * (discount_rate / 100))
+                
+                is_in_wishlist   = 1 if WishList.objects.filter(user=request.user).exists() else 0
+
+                product_dict = {
+                                'product_id'       : product.id,
+                                'product_name'     : product.name,
+                                'product_price'    : float(product.price),
+                                'product_thumbnail': product.thumbnail_image_url,
+                                'discount_rate'    : discount_rate,
+                                'discounted_price' : discounted_price,
+                                'stock'            : product.stock,
+                                'is_in_wishlist'   : is_in_wishlist
+                                }
+                products_list.append(product_dict)
+        except:
+            pass
