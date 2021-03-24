@@ -139,23 +139,20 @@ class WishListView(View):
     @auth_check
     def get(self, request):        
         wishlists = WishList.objects.filter(user_id=request.user.id)
-        try:
-            results = [{
-                'point'             : wishlist.user.point,                
-                'quantity'          : wishlist.quantity,
-                'user_id'           : wishlist.user.id,
-                'product_option_id' : wishlist.product_option.id,
-                'product_id'        : wishlist.product_id,
-                'product_name'      : wishlist.product.name,
-                'product_thumnail'  : wishlist.product.thumbnail_image_url,
-                'product_price'     : wishlist.product.price if not wishlist.product_option\
-                                      else wishlist.product.price + wishlist.product_option.additional_price ,
-                'total_price'       : wishlist.quantity * wishlist.product.price if not wishlist.product_option\
-                                      else wishlist.quantity * (wishlist.product.price + wishlist.product_option.additional_price),
-                'product_option_classification': wishlist.product_option.option.classification,
-                'product_option_name'          : wishlist.product_option.option.name
-                } for wishlist in wishlists]
-            return JsonResponse({'result' : results}, status=200)
+        results = [{
+            'point'             : wishlist.user.point,                
+            'quantity'          : wishlist.quantity,
+            'user_id'           : wishlist.user.id,
+            'product_option_id' : wishlist.product_option.id,
+            'product_id'        : wishlist.product_id,
+            'product_name'      : wishlist.product.name,
+            'product_thumnail'  : wishlist.product.thumbnail_image_url,
+            'product_price'     : wishlist.product.price if not wishlist.product_option\
+                                    else wishlist.product.price + wishlist.product_option.additional_price ,
+            'total_price'       : wishlist.quantity * wishlist.product.price if not wishlist.product_option\
+                                    else wishlist.quantity * (wishlist.product.price + wishlist.product_option.additional_price),
+            'product_option_classification': wishlist.product_option.option.classification,
+            'product_option_name'          : wishlist.product_option.option.name
+            } for wishlist in wishlists]
+        return JsonResponse({'result' : results}, status=200)
 
-        except KeyError:
-            return JsonResponse({'message' : 'KEY_ERROR'}, status=400)
