@@ -79,6 +79,7 @@ class CartView(View):
                           'product_thumbnail'            : cart.product.thumbnail_image_url,
                           'product_name'                 : cart.product.name,
                           'quantity'                     : cart.quantity,
+                          'stock'                        : cart.product.stock if not cart.product_option else cart.product_option.stock,
                           'product_price'                : float(cart.product.price) if not cart.product_option \
                                                            else float(cart.product.price + cart.product_option.additional_price),
                           'total_price'                  : cart.quantity * float(cart.product.price) if not cart.product_option \
