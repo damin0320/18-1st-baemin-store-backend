@@ -6,6 +6,7 @@ from json import JSONDecodeError
 
 from django.views import View
 from django.http  import JsonResponse
+from django.db    import transaction
 
 from .models        import User, Coupon, UserCoupon
 from product.models import SubCategory, CouponSubCategory
@@ -90,7 +91,9 @@ class SignUpView(View):
         except JSONDecodeError:
             return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
 
+
 class CouponRegistryView(View):
+    @transaction.atomic
     def post(self, request):
         try:
             data           = json.loads(request.body)
@@ -98,12 +101,18 @@ class CouponRegistryView(View):
             discount_price = data['discount_price']
             issue_date     = data['issue_date']
             expire_date    = data['expire_date']
-            coupons = Coupon.objects.create(
-                name           = name,
-                discount_price = discount_price,
-                issue_date     = issue_date,
-                expire_date    = expire_date
+            
+            sub_category   = SubCategory.objects.get(name=data['sub_category_name'])
+            
+            coupon = Coupon.objects.create(
+                name                = name,
+                discount_price      = discount_price,
+                issue_date          = issue_date,
+                expire_date         = expire_date
             )
+            
+            coupon_sub_category = CouponSubCategory.objects.create(coupon=coupon, sub_category=sub_category)
+            
             return JsonResponse({'message' : 'SUCCESS'}, status=201)
         except KeyError:
             return JsonResponse({'message' : 'KEY_ERROR'}, status=400)
@@ -132,24 +141,6 @@ class UserCouponView(View):
         except KeyError:
             return JsonResponse({'message' : 'KEY_ERROR'}, status=400)
         except JSONDecodeError:
-            return JsonResponse({'message' : 'JSON_DECODE_ERROR'}, status=400)
-        
-        
-class  SubCategoryCouponView(View):   
-    def post(self, request):
-        try:
-            data         = json.loads(request.body)
-            coupon       = Coupon.objects.get(id=data['coupon_id']).id
-            sub_category = SubCategory.objects.get(name=data['sub_category_name'])
-            
-            coupon_sub_category = CouponSubCategory.objects.create(
-                coupon_id    = coupon,
-                sub_category = sub_category
-            )
-            return JsonResponse({'message' : 'SUCCESS'}, status=201)
-        except KeyError:
-            return JsonResponse({'message' : 'KEY_ERROR'}, status=400)
-        except JSONDecodeError:
-            return JsonResponse({'message' : 'JSON_DECODE_ERROR'}, status=400)            
+            return JsonResponse({'message' : 'JSON_DECODE_ERROR'}, status=400)       
                         
                     
