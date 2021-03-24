@@ -21,6 +21,10 @@ class PointNotEnough(Exception):
     pass
 
 
+class QuantityZeroError(Exception):
+    pass
+
+
 class CartView(View):
     @auth_check
     def post(self, request):
@@ -38,6 +42,9 @@ class CartView(View):
                     quantity                = result['quantity']
                     product_option_id       = result['product_option_id']
                     product_option_quantity = result['product_option_quantity']
+
+                    if quantity == 0:
+                        raise QuantityZeroError
 
                     if product_option_id:
                         cart, is_created = Cart.objects.get_or_create(
@@ -70,6 +77,9 @@ class CartView(View):
             return JsonResponse({'message': 'TYPE_ERROR'}, status=400)
         except IntegrityError:
             return JsonResponse({'message': 'INTEGRITY_ERROR'}, status=400)
+        except QuantityZeroError:
+            return JsonResponse({'message': 'QUANTITY_ZERO_ERROR'}, status=400)
+
 
     @auth_check
     def get(self, request):
@@ -285,11 +295,12 @@ class OrderView(View):
                                             )
                         if cart.product_option.stock - cart.quantity < 0:
                             raise StockDoesNotExist
-                            
-                        cart.product_option.stock -= cart.quantity
-                        cart.product.stock        -= cart.quantity
-                        cart.save()
 
+                        cart.product_option.stock -= cart.quantity
+                        cart.product_option.save()
+
+                        cart.product.stock -= cart.quantity
+                        cart.product.save()                        
                     else:
                         cart = Cart.objects.get(
                                                 product_id = product['product_id'],
@@ -299,7 +310,7 @@ class OrderView(View):
                             raise StockDoesNotExist
                             
                         cart.product.stock -= cart.quantity
-                        cart.save()
+                        cart.product.save()
 
                     cart.order = order_delivery_done
                     cart.save()
