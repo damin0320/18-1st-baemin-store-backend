@@ -123,11 +123,12 @@ class CouponRegistryView(View):
 
 
 class UserCouponView(View):
+    @auth_check    
     def post(self, request):
         try:
             data     = json.loads(request.body)
             coupon   = Coupon.objects.get(id=data['coupon_id']).id
-            user     = User.objects.get(id=data['user_id']).id
+            user     = request.user.id
             quantity = data['quantity']
 
             
