@@ -243,8 +243,8 @@ class MainPageView(View):
                 carts = Cart.objects.filter(order=order)
                 cart_queryset |= carts
 
-            cart_queryset.order_by('quantity')
-
+            cart_queryset.values('product_id').annotate(total_quantity_sold=Sum('quantity'))
+            
             hot_products_list = list()
             for product in products_obj_list:
                 discount_rate    = float(DiscountRate.objects.get(product=product).rate * 100)
@@ -262,6 +262,6 @@ class MainPageView(View):
                                 'stock'            : product.stock,
                                 'is_in_wishlist'   : is_in_wishlist
                                 }
-                products_list.append(product_dict)
+                hot_products_list.append(product_dict)
         except:
             pass
