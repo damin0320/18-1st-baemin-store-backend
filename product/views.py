@@ -13,7 +13,7 @@ from .models import (
                      Review, ProductInquiry
                 )
 from user.models  import User
-from order.models import Order, WishList
+from order.models import Order, WishList, Cart
 
 from utils.decorators import user_check
 
@@ -38,7 +38,7 @@ class CategoryView(View):
                 discount_rate    = float(DiscountRate.objects.get(product=product).rate * 100)
                 discounted_price = float(product.price) - (float(product.price) * (discount_rate / 100))
                 
-                is_in_wishlist   = 1 if WishList.objects.filter(user=request.user).exists() else 0
+                is_in_wishlist   = 1 if WishList.objects.filter(user=request.user, product=product).exists() else 0
 
                 product_dict = {
                                 'product_id'       : product.id,
@@ -235,9 +235,16 @@ class MainPageView(View):
     @user_check
     def post(self, request):
         try:
-            products_obj_list = Product.objects.all()
+            purchase_done_order = Order.objects.filter(order_status_id=3)
             
-            products_list = list()
+            cart_queryset = Cart.objects.none()
+            for order in purchase_done_order:
+                carts = Cart.objects.filter(order=order)
+                cart_queryset |= carts
+
+            cart_queryset.order_by('quantity')
+
+            hot_products_list = list()
             for product in products_obj_list:
                 discount_rate    = float(DiscountRate.objects.get(product=product).rate * 100)
                 discounted_price = float(product.price) - (float(product.price) * (discount_rate / 100))
