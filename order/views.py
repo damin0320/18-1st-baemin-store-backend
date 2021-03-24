@@ -126,8 +126,8 @@ class CartView(View):
                                 ).delete()
                 else:
                     Cart.objects.get(
-                                     product_id        = result['product_id'],
-                                     order_id          = result['order_id']
+                                     product_id = result['product_id'],
+                                     order_id   = result['order_id']
                                 ).delete()
 
             return JsonResponse({'message': 'SUCCESS'}, status=201)
@@ -156,8 +156,8 @@ class SelectCartView(View):
             order_pending_purchase, _ = Order.objects.get_or_create(user=request.user, order_status=pending_purchase)
 
             for result in results:
-                product_id              = result['product_id']
-                product_option_id       = result['product_option_id']
+                product_id        = result['product_id']
+                product_option_id = result['product_option_id']
 
                 # 결제중인 상품도 장바구니에 노출되는데, 결제중인 상품을 선택해서 담을 가능성이 있기때문에
                 # get 으로 하면 에러가 나기 때문에 filter로 했음. 
