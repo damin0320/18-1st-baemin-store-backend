@@ -17,7 +17,7 @@ class CartView(View):
     @auth_check
     def post(self, request):
         try:
-            results    = json.loads(request.body)['results']
+            results = json.loads(request.body)['results']
 
             before_purchase, _ = OrderStatus.objects.get_or_create(id=1, status='구매전')
             order, _           = Order.objects.get_or_create(user=request.user, order_status=before_purchase)
@@ -93,7 +93,8 @@ class CartView(View):
                           'product_option_id'            : cart.product_option.id if cart.product_option else '',
                           'product_option_classification': cart.product_option.option.classification if cart.product_option else '',
                           'product_option_name'          : cart.product_option.option.name if cart.product_option else '',
-                          'order_status'                 : cart.order.order_status.status
+                          'order_status'                 : cart.order.order_status.status,
+                          'order_id'                     : cart.order_id
                         } for cart in carts]
             return JsonResponse({'results': cart_list}, status=200)
 
@@ -110,7 +111,7 @@ class SelectCartView(View):
     @auth_check
     def post(self, request):
         try:            
-            results    = json.loads(request.body)['results']
+            results = json.loads(request.body)['results']
 
             before_purchase, _  = OrderStatus.objects.get_or_create(id=1, status='구매전')
             pending_purchase, _ = OrderStatus.objects.get_or_create(id=2, status='결제중')
@@ -187,3 +188,32 @@ class SelectCartView(View):
             return JsonResponse({'message': 'KEY_ERROR'}, status=400)
         except Order.DoesNotExist:
             return JsonResponse({'message': 'ORDER_DOES_NOT_EXIST'}, status=404)
+
+    @transaction.atomic
+    @auth_check
+    def delete(self, request):
+        try:
+            results = json.loads(request.body)['results']
+
+            for result in results:
+                if result['product_option_id']:
+                    Cart.objects.get(
+                                     product_id        = result['product_id'],
+                                     product_option_id = result['product_option_id'],
+                                     order_id          = result['order_id']
+                                ).delete()
+                else:
+                    Cart.objects.get(
+                                     product_id        = result['product_id'],
+                                     order_id          = result['order_id']
+                                ).delete()
+
+            return JsonResponse({'message': 'SUCCESS'}, status=201)
+
+        except JSONDecodeError:
+            return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
+        except KeyError:
+            return JsonResponse({'message': 'KEY_ERROR'}, status=400)
+        except Cart.DoesNotExist:
+            return JsonResponse({'message': 'CART_DOES_NOT_EXIST'}, status=404)
+    
