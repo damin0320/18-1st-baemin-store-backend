@@ -9,6 +9,7 @@ from django.db.utils  import IntegrityError
 
 from .models          import Order, OrderStatus, Cart
 from product.models   import Product, ProductOption
+from user.models      import User, DeliveryAddress
 from utils.decorators import user_check, auth_check
 
 
@@ -104,95 +105,12 @@ class CartView(View):
             return JsonResponse({'message': 'KEY_ERROR'}, status=400)
         except Order.DoesNotExist:
             return JsonResponse({'message': 'CART_IS_EMPTY'}, status=404)
-
-
-class SelectCartView(View):
-    @transaction.atomic
-    @auth_check
-    def post(self, request):
-        try:            
-            results = json.loads(request.body)['results']
-
-            before_purchase, _  = OrderStatus.objects.get_or_create(id=1, status='구매전')
-            pending_purchase, _ = OrderStatus.objects.get_or_create(id=2, status='결제중')
-
-            order_before_purchase, _  = Order.objects.get_or_create(user=request.user, order_status=before_purchase)
-            order_pending_purchase, _ = Order.objects.get_or_create(user=request.user, order_status=pending_purchase)
-
-            for result in results:
-                product_id              = result['product_id']
-                product_option_id       = result['product_option_id']
-
-                # 결제중인 상품도 장바구니에 노출되는데, 결제중인 상품을 선택해서 담을 가능성이 있기때문에
-                # get 으로 하면 에러가 나기 때문에 filter로 했음. 
-                if product_option_id:
-                    cart = Cart.objects.filter(
-                                            product_id        = product_id,
-                                            product_option_id = product_option_id, 
-                                            order=order_before_purchase 
-                                        ).first()
-                else:
-                    cart = Cart.objects.filter(
-                                            product_id        = product_id,
-                                            order=order_before_purchase 
-                                        ).first()
-                if not cart:
-                    continue
-
-                pending_cart = Cart.objects.filter(order=order_pending_purchase).first()
-                if pending_cart:
-                    pending_cart.quantity += cart.quantity
-                    pending_cart.save()
-                    cart.delete()
-                else:
-                    cart.order = order_pending_purchase
-                    cart.save()
-
-            return JsonResponse({'message': 'SUCCESS'}, status=201)
-
-        except JSONDecodeError:
-            return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
-        except KeyError:
-            return JsonResponse({'message': 'KEY_ERROR'}, status=400)
-        except Cart.DoesNotExist:
-            return JsonResponse({'message': 'CART_DOES_NOT_EXIST'}, status=404)
     
-    @auth_check
-    def get(self, request):
-        try:
-            order_pending_purchase = Order.objects.get(user=request.user, order_status_id=2)
-            
-            carts = order_pending_purchase.cart_set.all()
-            if not carts:
-                return JsonResponse({'message': 'PRODUCT_NOT_SELECTED'}, status=404)
-
-            cart_list = [
-                         {'product_id'                   : cart.product.id,
-                          'product_thumbnail'            : cart.product.thumbnail_image_url,
-                          'product_name'                 : cart.product.name,
-                          'quantity'                     : cart.quantity,
-                          'product_price'                : float(cart.product.price) if not cart.product_option \
-                                                           else float(cart.product.price + cart.product_option.additional_price),
-                          'total_price'                  : cart.quantity * float(cart.product.price) if not cart.product_option \
-                                                           else cart.quantity * float(cart.product.price + cart.product_option.additional_price),
-                          'product_option_id'            : cart.product_option.id if cart.product_option else '',
-                          'product_option_classification': cart.product_option.option.classification if cart.product_option else '',
-                          'product_option_name'          : cart.product_option.option.name if cart.product_option else ''
-                        } for cart in carts]
-            
-            return JsonResponse({'results': cart_list}, status=200)
-
-        except JSONDecodeError:
-            return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
-        except KeyError:
-            return JsonResponse({'message': 'KEY_ERROR'}, status=400)
-        except Order.DoesNotExist:
-            return JsonResponse({'message': 'ORDER_DOES_NOT_EXIST'}, status=404)
-
     @transaction.atomic
     @auth_check
     def delete(self, request):
         try:
+            print(json.loads(request.body))
             results = json.loads(request.body)['results']
 
             for result in results:
@@ -217,3 +135,197 @@ class SelectCartView(View):
         except Cart.DoesNotExist:
             return JsonResponse({'message': 'CART_DOES_NOT_EXIST'}, status=404)
     
+
+class SelectCartView(View):
+    @transaction.atomic
+    @auth_check
+    def post(self, request):
+        try:            
+            results = json.loads(request.body)['results']
+
+            before_purchase, _  = OrderStatus.objects.get_or_create(id=1, status='구매전')
+            pending_purchase, _ = OrderStatus.objects.get_or_create(id=2, status='결제중')
+
+            order_before_purchase, _  = Order.objects.get_or_create(user=request.user, order_status=before_purchase)
+            order_pending_purchase, _ = Order.objects.get_or_create(user=request.user, order_status=pending_purchase)
+
+            for result in results:
+                product_id              = result['product_id']
+                product_option_id       = result['product_option_id']
+
+                # 결제중인 상품도 장바구니에 노출되는데, 결제중인 상품을 선택해서 담을 가능성이 있기때문에
+                # get 으로 하면 에러가 나기 때문에 filter로 했음. 
+                if product_option_id:
+                    cart = Cart.objects.filter(
+                                               product_id        = product_id,
+                                               product_option_id = product_option_id,
+                                               order             = order_before_purchase
+                                            ).first()
+
+                    pending_cart = Cart.objects.filter(
+                                                       product_id        = product_id,
+                                                       product_option_id = product_option_id,
+                                                       order             = order_pending_purchase
+                                                    ).first()
+                else:
+                    cart = Cart.objects.filter(
+                                               product_id = product_id,
+                                               order      = order_before_purchase
+                                            ).first()
+
+                    pending_cart = Cart.objects.filter(
+                                                       product_id = product_id,
+                                                       order      = order_pending_purchase
+                                                    ).first()
+                if not cart:
+                    continue
+
+                if pending_cart:
+                    pending_cart.quantity += cart.quantity
+                    pending_cart.save()
+                    cart.delete()
+                else:
+                    cart.order = order_pending_purchase
+                    cart.save()
+
+            return JsonResponse({'message': 'SUCCESS'}, status=201)
+
+        except JSONDecodeError:
+            return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
+        except KeyError:
+            return JsonResponse({'message': 'KEY_ERROR'}, status=400)
+        except Cart.DoesNotExist:
+            return JsonResponse({'message': 'CART_DOES_NOT_EXIST'}, status=404)
+    
+
+class OrderView(View):
+    @auth_check
+    def get(self, request):
+        try:
+            order_pending_purchase = Order.objects.get(user=request.user, order_status_id=2)
+            
+            carts = order_pending_purchase.cart_set.all()
+            if not carts:
+                return JsonResponse({'message': 'PRODUCT_NOT_SELECTED'}, status=404)
+
+            cart_list = [
+                         {
+                          'product_id'                   : cart.product.id,
+                          'order_id'                     : cart.order_id,
+                          'product_thumbnail'            : cart.product.thumbnail_image_url,
+                          'product_name'                 : cart.product.name,
+                          'quantity'                     : cart.quantity,
+                          'product_price'                : float(cart.product.price) if not cart.product_option \
+                                                           else float(cart.product.price + cart.product_option.additional_price),
+                          'total_price'                  : cart.quantity * float(cart.product.price) if not cart.product_option \
+                                                           else cart.quantity * float(cart.product.price + cart.product_option.additional_price),
+                          'product_option_id'            : cart.product_option.id if cart.product_option else '',
+                          'product_option_classification': cart.product_option.option.classification if cart.product_option else '',
+                          'product_option_name'          : cart.product_option.option.name if cart.product_option else ''
+                        } for cart in carts]
+            
+            user = User.objects.get(id=request.user.id)
+            user_detail = {
+                           "name"            : user.name,
+                           "phone_number"    : user.phone_number,
+                           "email"           : user.email,
+                           "delivery_address": user.address,
+                           "postal_code"     : user.postal_code,
+                           "detailed_address": user.detailed_address,
+                           "point"           : user.pointpending_purchase
+                        }
+            
+            return JsonResponse({'products': cart_list, 'user': user_detail}, status=200)
+
+        except JSONDecodeError:
+            return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
+        except Order.DoesNotExist:
+            return JsonResponse({'message': 'ORDER_DOES_NOT_EXIST'}, status=404)
+        except User.DoesNotExist:
+            return JsonResponse({'message': 'USER_DOES_NOT_EXIST'}, status=404)
+
+    @transaction.atomic
+    @auth_check
+    def post(self, request):
+        """
+        결제시 상품 옵션 재고 및 전체 옵션도 합산해서 깎기
+        재고 없으면 에러메시지 보내고 "결제중" -> "구매전" 으로 변경
+        결제시 order_status "결제중" -> "배송완료" 로 변경
+        """
+        try:
+            data = json.loads(request.body)
+
+            products    = data['products']
+            receiver    = data['receiver']
+            user_detail = data['user']
+            
+            # 장바구니("구매전")에 담아야 결제페이지 까지 올 수 있기 때문에
+            # 이미 order_status 테이블에 "구매전" 이 있을 것이기 때문에 get 으로 처리함
+            before_purchase          = OrderStatus.objects.get(id=1)
+            order_before_purchase, _ = Order.objects.get_or_create(user=request.user, order_status=before_purchase) 
+
+            delivery_done, _    = OrderStatus.objects.get_or_create(id=3, status='배송완료')
+            order_delivery_done = Order.objects.create(user=request.user, order_status=delivery_done)
+
+            print(products)
+            for product in products:
+                if product['product_option_id']:
+                    cart = Cart.objects.get(
+                                            product_id        = product['product_id'],
+                                            product_option_id = product['product_option_id'],
+                                            order_id          = product['order_id']
+                                        )
+                    if cart.product_option.stock - cart.quantity < 0:
+                        cart.order = order_before_purchase
+                        cart.save()
+                        return JsonResponse({'message': '{}, 재고가 없습니다.'.format(cart.product.name)}, status=400)
+                    
+                    cart.product_option.stock -= cart.quantity
+                    cart.product.stock        -= cart.quantity
+                    cart.save()
+
+                else:
+                    cart = Cart.objects.get(
+                                            product_id = product['product_id'],
+                                            order_id   = product['order_id']
+                                        )
+                    if cart.product.stock - cart.quantity < 0: 
+                        cart.order = order_before_purchase
+                        cart.save()
+                        return JsonResponse({'message': '{}, 재고가 없습니다.'.format(cart.product.name)}, status=400)
+
+                    cart.product.stock -= cart.quantity
+                    cart.save()
+
+                cart.order = order_delivery_done
+                cart.save()
+
+            Order.objects.filter(user=request.user, order_status=delivery_done).update(
+                                                                                        receiver_name=receiver['name'],
+                                                                                        phone_number=receiver['phone_number'],
+                                                                                        email=receiver['email'],
+                                                                                        delivery_address=receiver['delivery_address'],
+                                                                                        postal_code=receiver['postal_code'],
+                                                                                        detailed_address=receiver['detailed_address'],
+                                                                                        customor_message=receiver['customor_message']
+                                                                                    )
+            
+            if request.user.point < user_detail['point_used']:
+                return JsonResponse({'message': 'NOT_ENOUGH_POINT'}, status=400)
+            User.objects.filter(id=request.user.id).update(point=request.user.point - user_detail['point_used'])
+
+            if user_detail['add_my_address'] == 1:
+                DeliveryAddress.objects.get_or_create(
+                                                        user             = request.user, 
+                                                        address          = receiver['delivery_address'],
+                                                        postal_code      = receiver['postal_code'],
+                                                        detailed_address = receiver['detailed_address']
+                                                    )
+            return JsonResponse({'message': 'SUCCESS'}, status=201)
+
+        except JSONDecodeError:
+            return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
+        # except KeyError:
+        #     return JsonResponse({'message': 'KEY_ERROR'}, status=400)
+        except Cart.DoesNotExist:
+            return JsonResponse({'message': 'CART_DOES_NOT_EXIST'}, status=404)
