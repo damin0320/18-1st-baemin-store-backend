@@ -3,8 +3,9 @@ from json import JSONDecodeError
 
 from django.views import View
 from django.http  import JsonResponse
-from django.db       import transaction, IntegrityError
-from django.db.utils import DataError
+from django.db        import transaction, IntegrityError
+from django.db.utils  import DataError
+from django.db.models import Sum
 
 from .models import (
                      Category, SubCategory, Product,
@@ -233,7 +234,7 @@ class ProductRegistryView(View):
 
 class MainPageView(View):
     @user_check
-    def post(self, request):
+    def get(self, request):
         try:
             purchase_done_order = Order.objects.filter(order_status_id=3)
             
