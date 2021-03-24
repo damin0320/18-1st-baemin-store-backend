@@ -5,6 +5,7 @@ from django.views     import View
 from django.http      import JsonResponse
 from django.db        import transaction
 from django.db.models import Q
+from django.db.utils  import IntegrityError
 
 from .models          import Order, OrderStatus, Cart
 from product.models   import Product, ProductOption
@@ -57,6 +58,11 @@ class CartView(View):
             return JsonResponse({'message': 'KEY_ERROR'}, status=400)
         except Product.DoesNotExist:
             return JsonResponse({'message': 'PRODUCT_DOES_NOT_EXIST'}, status=404)
+        except TypeError:
+            return JsonResponse({'message': 'TYPE_ERROR'}, status=400)
+        except IntegrityError:
+            return JsonResponse({'message': 'INTEGRITY_ERROR'}, status=400)
+
 
     @auth_check
     def get(self, request):
@@ -116,21 +122,31 @@ class SelectCartView(View):
                 product_id              = result['product_id']
                 product_option_id       = result['product_option_id']
 
+                # 결제중인 상품도 장바구니에 노출되는데, 결제중인 상품을 선택해서 담을 가능성이 있기때문에
+                # get 으로 하면 에러가 나기 때문에 filter로 했음. 
                 if product_option_id:
-                    cart = Cart.objects.get(
-                                            Q(product_id        = product_id,
-                                              product_option_id = product_option_id) & 
-                                            (Q(order=order_before_purchase) | Q(order=order_pending_purchase)) 
-                                        )
-                    cart.order = order_pending_purchase
-                    cart.save()
+                    cart = Cart.objects.filter(
+                                            product_id        = product_id,
+                                            product_option_id = product_option_id, 
+                                            order=order_before_purchase 
+                                        ).first()
                 else:
-                    cart = Cart.objects.get(
-                                            Q(product_id = product_id) & 
-                                            (Q(order=order_before_purchase) | Q(order=order_pending_purchase)) 
-                                        )
+                    cart = Cart.objects.filter(
+                                            product_id        = product_id,
+                                            order=order_before_purchase 
+                                        ).first()
+                if not cart:
+                    continue
+
+                pending_cart = Cart.objects.filter(order=order_pending_purchase).first()
+                if pending_cart:
+                    pending_cart.quantity += cart.quantity
+                    pending_cart.save()
+                    cart.delete()
+                else:
                     cart.order = order_pending_purchase
                     cart.save()
+
             return JsonResponse({'message': 'SUCCESS'}, status=201)
 
         except JSONDecodeError:
