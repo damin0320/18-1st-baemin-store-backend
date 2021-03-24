@@ -240,7 +240,7 @@ class OrderView(View):
                            "delivery_address": user.address,
                            "postal_code"     : user.postal_code,
                            "detailed_address": user.detailed_address,
-                           "point"           : user.pointpending_purchase
+                           "point"           : user.point
                         }
             
             return JsonResponse({'products': cart_list, 'user': user_detail}, status=200)
