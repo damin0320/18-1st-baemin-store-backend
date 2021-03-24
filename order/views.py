@@ -32,9 +32,9 @@ class ApplyCouponView(View):
             
             result = []
             for i in user_coupon_list:
-                if user_coupon_list in sub_category_coupon_list:
+                if i in sub_category_coupon_list:
                     result.append(i)
-            return JsonResponse({'message' : 'SUCCESS'}, status=201)
+            return JsonResponse({'message' : 'SUCCESS', 'result' : result}, status=201)
         except KeyError:
             return JsonResponse({'message' : 'KEY_ERROR'}, status=400)
         except JSONDecodeError:
