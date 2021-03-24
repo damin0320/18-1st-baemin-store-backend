@@ -8,9 +8,10 @@ from django.views import View
 from django.http  import JsonResponse
 from django.db    import transaction
 
-from .models        import User, Coupon, UserCoupon
-from product.models import SubCategory, CouponSubCategory
-from my_settings import SECRET_KEY, HASHING_ALGORITHM
+from .models          import User, Coupon, UserCoupon
+from product.models   import SubCategory, CouponSubCategory
+from my_settings      import SECRET_KEY, HASHING_ALGORITHM
+from utils.decorators import auth_check
 
 
 class LoginView(View):
@@ -94,6 +95,7 @@ class SignUpView(View):
 
 class CouponRegistryView(View):
     @transaction.atomic
+    @auth_check
     def post(self, request):
         try:
             data           = json.loads(request.body)
