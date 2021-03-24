@@ -103,18 +103,19 @@ class CouponRegistryView(View):
             discount_price = data['discount_price']
             issue_date     = data['issue_date']
             expire_date    = data['expire_date']
-            
             sub_category   = SubCategory.objects.get(name=data['sub_category_name'])
-            
-            coupon = Coupon.objects.create(
+            coupons = Coupon.objects.create(
                 name                = name,
                 discount_price      = discount_price,
                 issue_date          = issue_date,
                 expire_date         = expire_date
             )
-            
-            coupon_sub_category = CouponSubCategory.objects.create(coupon=coupon, sub_category=sub_category)
-            
+            coupons = Coupon.objects.all()
+            for coupon in coupons:
+                coupon_sub_category = CouponSubCategory.objects.create(
+                    coupon=coupon, 
+                    sub_category=sub_category
+                    )
             return JsonResponse({'message' : 'SUCCESS'}, status=201)
         except KeyError:
             return JsonResponse({'message' : 'KEY_ERROR'}, status=400)
