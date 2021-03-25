@@ -277,7 +277,7 @@ class OrderView(View):
             products    = data['products']
             receiver    = data['receiver']
             user_detail = data['user']
-            
+
             for k, v in receiver.items():
                 if not v:
                     return JsonResponse({'message': 'NECESSARY_INFORMATION_NOT_FILLED'}, status=400)
@@ -337,10 +337,10 @@ class OrderView(View):
                                                                           customor_message = receiver['customor_message']
                                                                         )
                 
-                if request.user.point < user_detail['point_used']:
+                if float(request.user.point) < float(user_detail['point_used']):
                     raise PointNotEnough                    
 
-                User.objects.filter(id=request.user.id).update(point=request.user.point - user_detail['point_used'] + user_detail['point'])
+                User.objects.filter(id=request.user.id).update(point=float(request.user.point) - float(user_detail['point_used']) + float(user_detail['point']))
 
                 if user_detail['add_my_address'] == 1:
                     DeliveryAddress.objects.get_or_create(
