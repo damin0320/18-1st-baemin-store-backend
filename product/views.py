@@ -27,14 +27,14 @@ class CategoryView(View):
                 category       = Category.objects.get(name=category_name)
                 sub_categories = SubCategory.objects.filter(category=category)
 
-                products_obj_list = list()
+                products_obj_list = []
                 for sub_category in sub_categories:
                     products = Product.objects.filter(sub_category=sub_category)
                     products_obj_list += list(products)
             else:
                 products_obj_list = Product.objects.all()
             
-            products_list = list()
+            products_list = []
             for product in products_obj_list:
                 discount_rate    = float(DiscountRate.objects.get(product=product).rate * 100)
                 discounted_price = float(product.price) - (float(product.price) * (discount_rate / 100))
@@ -277,14 +277,14 @@ class MainPageView(View):
 
     def get_product_details(self, products, user):
         """
-        products : iterable Model objects in list or QuerySet
+        products : iterable Model objects in list type or QuerySet type
         """
         products_detail = []
         for product in products:
             discount_rate    = float(DiscountRate.objects.get(product=product).rate * 100)
             discounted_price = float(product.price) - (float(product.price) * (discount_rate / 100))
             
-            is_in_wishlist   = 1 if WishList.objects.filter(user=user).exists() else 0
+            is_in_wishlist   = 1 if WishList.objects.filter(user=user, product=product).exists() else 0
 
             product_dict = {
                             'product_id'       : product.id,
