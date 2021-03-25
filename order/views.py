@@ -29,16 +29,8 @@ class ApplyCouponView(View):
             sub_category             = Product.objects.get(id=product_id).sub_category
             sub_category_coupons     = sub_category.couponsubcategory_set.all()
             sub_category_coupon_list = [sub_category_coupon.coupon_id for sub_category_coupon in sub_category_coupons]
-
-            result = []
-            for i in user_coupon_list:
-                if i in sub_category_coupon_list:
-                    result.append(i)
             
-            coupon_name = []
-            for j in result:
-                coupon = Coupon.objects.get(id=j)
-                coupon_name.append(coupon.name)
+            coupon_name = [Coupon.objects.get(id=j).name for j in [i for i in user_coupon_list if i in sub_category_coupon_list]]
             
             return JsonResponse({'message' : 'SUCCESS', 'coupon_name' : coupon_name}, status=201)
         except KeyError:
