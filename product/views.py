@@ -240,28 +240,51 @@ class MainPageView(View):
             
             cart_queryset = Cart.objects.none()
             for order in purchase_done_order:
-                carts = Cart.objects.filter(order=order)
-                cart_queryset |= carts
+                cart_queryset |= Cart.objects.filter(order=order)
 
-            cart_queryset.values('product_id').annotate(total_quantity_sold=Sum('quantity'))
+            hot_products        = cart_queryset.values('product_id').annotate(total_quantity_sold=Sum('quantity')).order_by('-quantity')[:4]
+            hot_products_detail = self.get_product_details(hot_products, request.user)
             
-            hot_products_list = list()
-            for product in products_obj_list:
-                discount_rate    = float(DiscountRate.objects.get(product=product).rate * 100)
-                discounted_price = float(product.price) - (float(product.price) * (discount_rate / 100))
-                
-                is_in_wishlist   = 1 if WishList.objects.filter(user=request.user).exists() else 0
+            new_products = Product.objects.all().order_by('-created_at')[:8]
+            new_products_detail = self.get_product_details(new_products, request.user)
 
-                product_dict = {
-                                'product_id'       : product.id,
-                                'product_name'     : product.name,
-                                'product_price'    : float(product.price),
-                                'product_thumbnail': product.thumbnail_image_url,
-                                'discount_rate'    : discount_rate,
-                                'discounted_price' : discounted_price,
-                                'stock'            : product.stock,
-                                'is_in_wishlist'   : is_in_wishlist
-                                }
-                hot_products_list.append(product_dict)
-        except:
-            pass
+            # 할인율 10프로 이상, 남은 재고 (stock) 가 많은 상품순대로
+            discount_rates = DiscountRate.objects.filter(rate__gte=0.1)
+            
+            product_queryset = Product.objects.none()
+            for discount_rate in discount_rates:
+                product_queryset |= discount_rate.product
+            
+            sale_products = product_queryset[:8]
+            sale_products_detail = self.get_product_details(sale_products, request.user)
+            
+            results = {
+                       'hot_products' : hot_products,
+                       'new_products' : new_products,
+                       'sale_products': sale_products
+                    } 
+            return JsonResponse(results, status=200)
+
+        except Exception as e:
+            print(e)
+    
+    def get_product_details(self, products, user):
+        products_detail = []
+        for product in products:
+            discount_rate    = float(DiscountRate.objects.get(product=product).rate * 100)
+            discounted_price = float(product.price) - (float(product.price) * (discount_rate / 100))
+            
+            is_in_wishlist   = 1 if WishList.objects.filter(user=user).exists() else 0
+
+            product_dict = {
+                            'product_id'       : product.id,
+                            'product_name'     : product.name,
+                            'product_price'    : float(product.price),
+                            'product_thumbnail': product.thumbnail_image_url,
+                            'discount_rate'    : discount_rate,
+                            'discounted_price' : discounted_price,
+                            'stock'            : product.stock,
+                            'is_in_wishlist'   : is_in_wishlist
+                            }
+            products_detail.append(product_dict)
+        return products_detail
