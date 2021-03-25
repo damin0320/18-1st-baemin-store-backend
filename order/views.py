@@ -16,7 +16,6 @@ from utils.decorators import auth_check
 
 class ApplyCouponView(View):
     @auth_check
-    @transaction.atomic()
     def post(self, request):
         try:
             data       = json.loads(request.body)
