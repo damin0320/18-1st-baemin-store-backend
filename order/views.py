@@ -43,10 +43,10 @@ class CartView(View):
                     product_option_id       = result['product_option_id']
                     product_option_quantity = result['product_option_quantity']
 
-                    if quantity == 0:
-                        raise QuantityZeroError
-
                     if product_option_id:
+                        if product_option_quantity == 0:
+                            raise QuantityZeroError
+
                         cart, is_created = Cart.objects.get_or_create(
                                                                     product_id        = product_id,
                                                                     order             = order,
@@ -57,6 +57,9 @@ class CartView(View):
                             cart.quantity += product_option_quantity
                             cart.save()
                     else:
+                        if quantity == 0:
+                            raise QuantityZeroError
+
                         cart, is_created = Cart.objects.get_or_create(
                                                                     product_id = product_id,
                                                                     order      = order,
@@ -128,7 +131,6 @@ class CartView(View):
             results = json.loads(request.body)['results']
             if not results:
                 return JsonResponse({'message': 'PRODUCT_NOT_SELECTED'}, status=400)
-
             with transaction.atomic():
                 for result in results:
                     if result['product_option_id']:
@@ -151,10 +153,9 @@ class CartView(View):
         except Cart.DoesNotExist:
             return JsonResponse({'message': 'CART_DOES_NOT_EXIST'}, status=404)
     
-
-class SelectCartView(View):
+    # 장바구니에서 상품을 몇개만 선택할 수 있음
     @auth_check
-    def post(self, request):
+    def patch(self, request):
         try:            
             results = json.loads(request.body)['results']
             if not results:
