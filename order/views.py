@@ -16,11 +16,10 @@ from utils.decorators import auth_check
 
 class ApplyCouponView(View):
     @auth_check
-    def post(self, request):
+    def get(self, request, product_id):
         try:
-            data       = json.loads(request.body)
             user_id    = request.user.id
-            product_id = data['product_id']
+            product = Product.objects.get(id=product_id)
 
             user_coupons     = UserCoupon.objects.filter(user_id = user_id)
             user_coupon_list = [user_coupon.coupon_id for user_coupon in user_coupons]
