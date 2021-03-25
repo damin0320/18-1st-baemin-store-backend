@@ -1,22 +1,72 @@
 import json
-import decimal
+import datetime
 from json import JSONDecodeError
 
-from django.db       import transaction, IntegrityError
-from django.db.utils import DataError
 from django.views import View
 from django.http  import JsonResponse
+from django.db        import transaction, IntegrityError
+from django.db.utils  import DataError
+from django.db.models import Sum
 
-from .models      import (
-                          Category, SubCategory, Product,
-                          ProductImage, ProductDescription, BookDescription,
-                          DiscountRate, Option, ProductOption,
-                          Review, ProductInquiry
-                        )
+from .models import (
+                     Category, SubCategory, Product,
+                     ProductImage, ProductDescription, BookDescription,
+                     DiscountRate, Option, ProductOption,
+                     Review, ProductInquiry
+                )
 from user.models  import User
-from order.models import Order
+from order.models import Order, WishList, Cart
+
+from utils.decorators import user_check
 
 
+BEFORE_PURCHASE = 1
+PENDING_PURCHASE = 2
+PURCHASE_DONE = 3
+
+
+class CategoryView(View):
+    @user_check
+    def get(self, request, category_name):
+        try:
+            if not category_name == '전체':
+                sub_categories = SubCategory.objects.filter(category__name=category_name)
+
+                products_obj_list = []
+                for sub_category in sub_categories:
+                    products = Product.objects.filter(sub_category=sub_category)
+                    products_obj_list += list(products)
+            else:
+                products_obj_list = Product.objects.all()
+            
+            products_list = []
+            for product in products_obj_list:
+                discount_rate    = float(DiscountRate.objects.get(product=product).rate * 100)
+                discounted_price = float(product.price) - (float(product.price) * (discount_rate / 100))
+                
+                is_in_wishlist   = 1 if WishList.objects.filter(user=request.user, product=product).exists() else 0
+
+                product_dict = {
+                                'product_id'       : product.id,
+                                'product_name'     : product.name,
+                                'product_price'    : float(product.price),
+                                'product_thumbnail': product.thumbnail_image_url,
+                                'discount_rate'    : discount_rate,
+                                'discounted_price' : discounted_price,
+                                'stock'            : product.stock,
+                                'is_in_wishlist'   : is_in_wishlist
+                                }
+                products_list.append(product_dict)
+            return JsonResponse({'results': products_list}, status=200)
+
+        except JSONDecodeError:
+            return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)    
+        except Category.DoesNotExist:
+            return JsonResponse({'message': 'CATEGORY_DOES_NOT_EXIST'}, status=404)
+        except DiscountRate.DoesNotExist:
+            return JsonResponse({'message': 'DISCOUNTRATE_DOES_NOT_EXIST'}, status=404)
+
+            
 class ProductView(View):
     def get(self, request, product_id):
         try:            
@@ -186,3 +236,82 @@ class ProductRegistryView(View):
             return JsonResponse({'message': 'INTEGRITY_ERROR'}, status=400)
         except DataError:
             return JsonResponse({'message': 'DATA_ERROR'}, status=400)
+
+
+class MainPageView(View):
+    @user_check
+    def get(self, request):
+        try:            
+            # 인기상품 상위 4개 구하는 로직
+            hot_products = self.get_hot_products_querysets()[:4]
+            hot_products_detail = self.get_product_details(hot_products, request.user)
+
+            # 신상품 8개 구하는 로직, 신상순
+            new_products = Product.objects.all().order_by('-created_at')[:8]
+            new_products_detail = self.get_product_details(new_products, request.user)
+
+            # 할인상품 8개 구하는 로직, 할인율 10프로 이상, 남은 재고 (stock) 가 많은 상품순대로
+            discount_rates = DiscountRate.objects.filter(rate__gte=0.1)
+            
+            product_querysets = Product.objects.none()
+            for discount_rate in discount_rates:
+                product_querysets |= Product.objects.filter(id=discount_rate.product_id)  
+
+            sale_products = product_querysets[:8]
+            sale_products_detail = self.get_product_details(sale_products, request.user)
+            
+            results = {
+                       'hot_products' : hot_products_detail,
+                       'new_products' : new_products_detail,
+                       'sale_products': sale_products_detail
+                    } 
+            return JsonResponse(results, status=200)
+
+        except Product.DoesNotExist:
+            return JsonResponse({'message': 'PRODUCT_DOES_NOT_EXIST'}, status=404)
+
+    def get_product_details(self, products, user):
+        """
+        products : iterable Model objects in list type or QuerySet type
+        """
+        products_detail = []
+        for product in products:
+            discount_rate    = float(DiscountRate.objects.get(product=product).rate)
+            discounted_price = float(product.price) - (float(product.price) * discount_rate)
+            
+            is_in_wishlist   = 1 if WishList.objects.filter(user=user, product=product).exists() else 0
+
+            # 오늘 기준 7일 이내 상품은 모두 신상품
+            # 구매순 10위 안에 들면 베스트 상품
+            product_dict = {
+                            'product_id'       : product.id,
+                            'product_name'     : product.name,
+                            'product_price'    : float(product.price),
+                            'product_thumbnail': product.thumbnail_image_url,
+                            'discount_rate'    : discount_rate * 100,
+                            'discounted_price' : discounted_price,
+                            'stock'            : product.stock,
+                            'is_in_wishlist'   : is_in_wishlist,
+                            'is_new'           : 1 if product in Product.objects.filter\
+                                                (updated_at__gte=datetime.datetime.today()-datetime.timedelta(days=7))\
+                                                else 0,
+                            'is_best'          : 1 if product in self.get_hot_products_querysets() else 0
+                            }
+            products_detail.append(product_dict)
+        return products_detail
+
+    def get_hot_products_querysets(self):
+        """
+        베스트상품 10개 가져오는 함수
+        """
+        cart_querysets = Cart.objects.filter(order__order_status=PURCHASE_DONE)
+
+        hot_products = cart_querysets.values('product_id').\
+                        annotate(total_quantity_sold=Sum('quantity'))\
+                        .order_by('-quantity')[:10]
+
+        product_querysets = Product.objects.none()
+        for hot_product in hot_products:
+            product_querysets |= Product.objects.filter(id=hot_product['product_id'])
+
+        return product_querysets
