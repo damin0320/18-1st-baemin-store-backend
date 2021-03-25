@@ -238,37 +238,47 @@ class MainPageView(View):
         try:
             purchase_done_order = Order.objects.filter(order_status_id=3)
             
+            # 인기상품 상위 4개 구하는 로직
             cart_queryset = Cart.objects.none()
             for order in purchase_done_order:
                 cart_queryset |= Cart.objects.filter(order=order)
 
-            hot_products        = cart_queryset.values('product_id').annotate(total_quantity_sold=Sum('quantity')).order_by('-quantity')[:4]
-            hot_products_detail = self.get_product_details(hot_products, request.user)
-            
+            hot_products = cart_queryset.values('product_id').annotate(total_quantity_sold=Sum('quantity')).order_by('-quantity')[:4]
+
+            product_queryset = Product.objects.none()
+            for hot_product in hot_products:
+                product_queryset |= Product.objects.filter(id=hot_product['product_id'])
+
+            hot_products_detail = self.get_product_details(product_queryset, request.user)
+
+            # 신상품 8개 구하는 로직, 신상순
             new_products = Product.objects.all().order_by('-created_at')[:8]
             new_products_detail = self.get_product_details(new_products, request.user)
 
-            # 할인율 10프로 이상, 남은 재고 (stock) 가 많은 상품순대로
+            # 할인상품 8개 구하는 로직, 할인율 10프로 이상, 남은 재고 (stock) 가 많은 상품순대로
             discount_rates = DiscountRate.objects.filter(rate__gte=0.1)
             
             product_queryset = Product.objects.none()
             for discount_rate in discount_rates:
-                product_queryset |= discount_rate.product
-            
+                product_queryset |= Product.objects.filter(id=discount_rate.product_id)  
+
             sale_products = product_queryset[:8]
             sale_products_detail = self.get_product_details(sale_products, request.user)
             
             results = {
-                       'hot_products' : hot_products,
-                       'new_products' : new_products,
-                       'sale_products': sale_products
+                       'hot_products' : hot_products_detail,
+                       'new_products' : new_products_detail,
+                       'sale_products': sale_products_detail
                     } 
             return JsonResponse(results, status=200)
 
-        except Exception as e:
-            print(e)
-    
+        except Product.DoesNotExist:
+            return JsonResponse({'message': 'PRODUCT_DOES_NOT_EXIST'}, status=404)
+
     def get_product_details(self, products, user):
+        """
+        products : iterable Model objects in list or QuerySet
+        """
         products_detail = []
         for product in products:
             discount_rate    = float(DiscountRate.objects.get(product=product).rate * 100)
