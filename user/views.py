@@ -11,8 +11,6 @@ from django.db    import transaction
 from .models          import User, Coupon, UserCoupon
 from product.models   import SubCategory, CouponSubCategory
 from my_settings      import SECRET_KEY, HASHING_ALGORITHM
-from utils.decorators import auth_check
-from .models        import User
 from order.models   import WishList
 from product.models import Product, ProductOption, Option, DiscountRate
 from my_settings import SECRET_KEY, HASHING_ALGORITHM
@@ -159,33 +157,35 @@ class WishListView(View):
     @transaction.atomic
     def post(self, request):
         try:
-            data  = json.loads(request.body)
             user_id = request.user.id
-            product_id              = data['product_id']
-            quantity                = data['quantity']
-            product_option_id       = data['product_option_id']
-            product_option_quantity = data['product_option_quantity']            
-                    
-            if product_option_id:
-                wishlist, is_created = WishList.objects.get_or_create(
-                    product_id        = data['product_id'],
-                    product_option_id = data['product_option_id'],
-                    user_id           = user_id,
-                    defaults          = {'quantity': data['quantity']}
-                    )
-                if not is_created:
-                    wishlist.quantity += product_option_quantity
-                    wishlist.save()
-            else:
-                wishlist, is_created = WishList.objects.get_or_create(
-                    product_id = product_id,
-                    user_id    = user_id,
-                    defaults   = {'quantity': quantity}
-                    )
+            selected_products = json.loads(request.body)['selected_products']
 
-                if not is_created:
-                    wishlist.quantity += quantity
-                    wishlist.save()      
+            for selected_product in selected_products:
+                product_id              = selected_product['product_id']
+                quantity                = selected_product['quantity']
+                product_option_id       = selected_product['product_option_id']
+                product_option_quantity = selected_product['product_option_quantity']            
+
+                if product_option_id:
+                    wishlist, is_created = WishList.objects.get_or_create(
+                        product_id        = product_id,
+                        product_option_id = product_option_id,
+                        user_id           = user_id,
+                        defaults          = {'quantity': product_option_quantity}
+                        )
+                    if not is_created:
+                        wishlist.quantity += product_option_quantity
+                        wishlist.save()
+                else:
+                    wishlist, is_created = WishList.objects.get_or_create(
+                        product_id = product_id,
+                        user_id    = user_id,
+                        defaults   = {'quantity': quantity}
+                        )
+
+                    if not is_created:
+                        wishlist.quantity += quantity
+                        wishlist.save()      
             return JsonResponse({'message' : 'SUCCESS'}, status=201)
         
         except JSONDecodeError:
@@ -194,13 +194,13 @@ class WishListView(View):
             return JsonResponse({'message' : 'KEY_ERROR'}, status=400)  
 
     @auth_check
-    def get(self, request):        
-        wishlists = WishList.objects.filter(user_id=request.user.id)
+    def get(self, request):
+        wishlists = WishList.objects.filter(user=request.user)
         results = [{
             'point'             : wishlist.user.point,                
             'quantity'          : wishlist.quantity,
             'user_id'           : wishlist.user.id,
-            'product_option_id' : wishlist.product_option.id,
+            'product_option_id' : wishlist.product_option.id if wishlist.product_option else '',
             'product_id'        : wishlist.product_id,
             'product_name'      : wishlist.product.name,
             'product_thumnail'  : wishlist.product.thumbnail_image_url,
@@ -208,8 +208,8 @@ class WishListView(View):
                                     else wishlist.product.price + wishlist.product_option.additional_price ,
             'total_price'       : wishlist.quantity * wishlist.product.price if not wishlist.product_option\
                                     else wishlist.quantity * (wishlist.product.price + wishlist.product_option.additional_price),
-            'product_option_classification': wishlist.product_option.option.classification,
-            'product_option_name'          : wishlist.product_option.option.name
+            'product_option_classification': wishlist.product_option.option.classification if wishlist.product_option else '',
+            'product_option_name'          : wishlist.product_option.option.name if wishlist.product_option else ''
             } for wishlist in wishlists]
-        return JsonResponse({'result' : results}, status=200)
 
+        return JsonResponse({'results' : results}, status=200)

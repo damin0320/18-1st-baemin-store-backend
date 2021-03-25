@@ -237,6 +237,10 @@ class ProductRegistryView(View):
             return JsonResponse({'message': 'INTEGRITY_ERROR'}, status=400)
         except DataError:
             return JsonResponse({'message': 'DATA_ERROR'}, status=400)
+        except TypeError:
+            print(data['options'])
+            return JsonResponse({'message': 'TYPE_ERROR'}, status=400)
+
 
 
 class MainPageView(View):
