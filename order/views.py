@@ -263,6 +263,7 @@ class OrderView(View):
             return JsonResponse({'message': 'USER_DOES_NOT_EXIST'}, status=404)
 
 
+    # TODO: 입력정보 유효성 검사
     @auth_check
     def post(self, request):
         """
