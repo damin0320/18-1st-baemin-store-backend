@@ -8,6 +8,10 @@ from django.views import View
 from django.http  import JsonResponse
 from django.db    import transaction
 
+from .models          import User, Coupon, UserCoupon
+from product.models   import SubCategory, CouponSubCategory
+from my_settings      import SECRET_KEY, HASHING_ALGORITHM
+from utils.decorators import auth_check
 from .models        import User
 from order.models   import WishList
 from product.models import Product, ProductOption, Option, DiscountRate
@@ -94,6 +98,62 @@ class SignUpView(View):
             return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
 
 
+class CouponRegistryView(View):
+    @transaction.atomic
+    @auth_check
+    def post(self, request):
+        try:
+            data           = json.loads(request.body)
+            name           = data['name']
+            discount_price = data['discount_price']
+            issue_date     = data['issue_date']
+            expire_date    = data['expire_date']
+            coupons = Coupon.objects.create(
+                name                = name,
+                discount_price      = discount_price,
+                issue_date          = issue_date,
+                expire_date         = expire_date
+            )
+            coupon = Coupon.objects.get(name=data['name'])
+            sub_categories   = SubCategory.objects.filter(name__in=data['sub_category_name'])
+            for sub_category in sub_categories:
+                coupon_sub_category = CouponSubCategory.objects.create(
+                    coupon=coupon, 
+                    sub_category=sub_category
+                    )
+            return JsonResponse({'message' : 'SUCCESS'}, status=201)
+        except KeyError:
+            return JsonResponse({'message' : 'KEY_ERROR'}, status=400)
+        except JSONDecodeError:
+            return JsonResponse({'message' : 'JSON_DECODE_ERROR'}, status=400)      
+
+
+class UserCouponView(View):
+    @transaction.atomic
+    @auth_check    
+    def post(self, request):
+        try:
+            data     = json.loads(request.body)
+            coupon   = Coupon.objects.get(id=data['coupon_id']).id
+            user     = request.user.id
+            quantity = data['quantity']
+
+            
+            user_coupon, is_created = UserCoupon.objects.get_or_create(
+            coupon_id = coupon,
+            user_id   = user,
+            defaults  = {'quantity' : quantity}
+            )
+            if not is_created:
+                user_coupon.quantity += data['quantity']
+                user_coupon.save()
+            return JsonResponse({'message' : 'SUCCESS'}, status=201)
+        except KeyError:
+            return JsonResponse({'message' : 'KEY_ERROR'}, status=400)
+        except JSONDecodeError:
+            return JsonResponse({'message' : 'JSON_DECODE_ERROR'}, status=400)
+                      
+                    
 class WishListView(View):
     @auth_check
     @transaction.atomic
