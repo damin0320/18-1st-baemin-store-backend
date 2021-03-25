@@ -103,15 +103,15 @@ class CouponRegistryView(View):
             discount_price = data['discount_price']
             issue_date     = data['issue_date']
             expire_date    = data['expire_date']
-            sub_category   = SubCategory.objects.get(name=data['sub_category_name'])
             coupons = Coupon.objects.create(
                 name                = name,
                 discount_price      = discount_price,
                 issue_date          = issue_date,
                 expire_date         = expire_date
             )
-            coupons = Coupon.objects.all()
-            for coupon in coupons:
+            coupon = Coupon.objects.get(name=data['name'])
+            sub_categories   = SubCategory.objects.filter(name__in=data['sub_category_name'])
+            for sub_category in sub_categories:
                 coupon_sub_category = CouponSubCategory.objects.create(
                     coupon=coupon, 
                     sub_category=sub_category
