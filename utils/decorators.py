@@ -14,7 +14,7 @@ def auth_check(func):
         try:
             token = request.headers.get('Authorization')
             if not token:
-                return JsonResponse({'message': 'TOKEN_DOES_NOT_EXIST'})
+                return JsonResponse({'message': 'TOKEN_DOES_NOT_EXIST'}, status=400)
             decoded_auth_token = jwt.decode(token, SECRET_KEY, algorithms=HASHING_ALGORITHM)
             
             user_id = decoded_auth_token['user_id']

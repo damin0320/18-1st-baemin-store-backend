@@ -278,6 +278,14 @@ class OrderView(View):
             receiver    = data['receiver']
             user_detail = data['user']
             
+            for k, v in receiver.items():
+                if not v:
+                    return JsonResponse({'message': 'NECESSARY_INFORMATION_NOT_FILLED'}, status=400)
+            
+            for k, v in user_detail.items():
+                if not v:
+                    return JsonResponse({'message': 'NECESSARY_INFORMATION_NOT_FILLED'}, status=400)
+
             # 장바구니("구매전")에 담아야 결제페이지 까지 올 수 있기 때문에
             # 이미 order_status 테이블에 "구매전" 이 있을 것이기 때문에 get 으로 처리함
 
@@ -332,7 +340,7 @@ class OrderView(View):
                 if request.user.point < user_detail['point_used']:
                     raise PointNotEnough                    
 
-                User.objects.filter(id=request.user.id).update(point=request.user.point - user_detail['point_used'])
+                User.objects.filter(id=request.user.id).update(point=request.user.point - user_detail['point_used'] + user_detail['point'])
 
                 if user_detail['add_my_address'] == 1:
                     DeliveryAddress.objects.get_or_create(
@@ -341,6 +349,7 @@ class OrderView(View):
                                                             postal_code      = receiver['postal_code'],
                                                             detailed_address = receiver['detailed_address']
                                                         )
+                
             return JsonResponse({'message': 'SUCCESS'}, status=201)
 
         except JSONDecodeError:
