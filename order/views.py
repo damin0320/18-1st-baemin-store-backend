@@ -280,11 +280,11 @@ class OrderView(View):
 
             for k, v in receiver.items():
                 if not v:
-                    return JsonResponse({'message': 'NECESSARY_INFORMATION_NOT_FILLED'}, status=400)
+                    return JsonResponse({'message': 'NECESSARY_INFORMATION_NOT_FILLED, {}'.format(k)}, status=400)
             
             for k, v in user_detail.items():
                 if not v:
-                    return JsonResponse({'message': 'NECESSARY_INFORMATION_NOT_FILLED'}, status=400)
+                    return JsonResponse({'message': 'NECESSARY_INFORMATION_NOT_FILLED, {}'.format(k)}, status=400)
 
             # 장바구니("구매전")에 담아야 결제페이지 까지 올 수 있기 때문에
             # 이미 order_status 테이블에 "구매전" 이 있을 것이기 때문에 get 으로 처리함
