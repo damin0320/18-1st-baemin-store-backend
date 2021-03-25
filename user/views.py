@@ -99,10 +99,13 @@ class WishListView(View):
     @transaction.atomic
     def post(self, request):
         try:
-            data                    = json.loads(request.body)['results']
-            user_id                 = request.user.id
-            product_option_quantity = data['product_option_quantity']
-                        
+            data  = json.loads(request.body)
+            user_id = request.user.id
+            product_id              = data['product_id']
+            quantity                = data['quantity']
+            product_option_id       = data['product_option_id']
+            product_option_quantity = data['product_option_quantity']            
+                    
             if product_option_id:
                 wishlist, is_created = WishList.objects.get_or_create(
                     product_id        = data['product_id'],
