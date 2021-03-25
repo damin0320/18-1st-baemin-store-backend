@@ -34,19 +34,19 @@ def auth_check(func):
 
 # user check without blocking 
 def user_check(func):
-    def wrapper(self, request):
+    def wrapper(self, request, *args, **kwargs):
         try:
             token = request.headers.get('Authorization')
             if not token:
                 request.user = None
-                return func(self, request)
+                return func(self, request, *args, **kwargs)
             decoded_auth_token = jwt.decode(token, SECRET_KEY, algorithms=HASHING_ALGORITHM)
             
             user_id = decoded_auth_token['user_id']
             user    = User.objects.get(id=user_id)
 
             request.user = user
-            return func(self, request)
+            return func(self, request, *args, **kwargs)
 
         except InvalidSignatureError:
             return JsonResponse({'message': 'SIGNATURE_VERIFICATION_FAILED'}, status=400)
