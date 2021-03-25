@@ -18,11 +18,7 @@ from user.models  import User
 from order.models import Order, WishList, Cart
 
 from utils.decorators import user_check
-
-
-BEFORE_PURCHASE = 1
-PENDING_PURCHASE = 2
-PURCHASE_DONE = 3
+from utils.util       import get_hot_products_querysets
 
 
 class CategoryView(View):
@@ -54,8 +50,13 @@ class CategoryView(View):
                                 'discount_rate'    : discount_rate,
                                 'discounted_price' : discounted_price,
                                 'stock'            : product.stock,
-                                'is_in_wishlist'   : is_in_wishlist
-                                }
+                                'is_in_wishlist'   : is_in_wishlist,
+                                'is_new'           : 1 if product in Product.objects.filter\
+                                                    (updated_at__gte=datetime.datetime.today()-datetime.timedelta(days=7))\
+                                                    else 0,
+                                'is_best': 1 if product in get_hot_products_querysets() else 0,
+                                'is_sale': 1 if discount_rate > 0 else 0
+                            }
                 products_list.append(product_dict)
             return JsonResponse({'results': products_list}, status=200)
 
@@ -243,7 +244,7 @@ class MainPageView(View):
     def get(self, request):
         try:            
             # 인기상품 상위 4개 구하는 로직
-            hot_products = self.get_hot_products_querysets()[:4]
+            hot_products = get_hot_products_querysets()[:4]
             hot_products_detail = self.get_product_details(hot_products, request.user)
 
             # 신상품 8개 구하는 로직, 신상순
@@ -295,23 +296,8 @@ class MainPageView(View):
                             'is_new'           : 1 if product in Product.objects.filter\
                                                 (updated_at__gte=datetime.datetime.today()-datetime.timedelta(days=7))\
                                                 else 0,
-                            'is_best'          : 1 if product in self.get_hot_products_querysets() else 0
+                            'is_best'          : 1 if product in get_hot_products_querysets() else 0,
+                            'is_sale'          : 1 if discount_rate > 0 else 0
                             }
             products_detail.append(product_dict)
         return products_detail
-
-    def get_hot_products_querysets(self):
-        """
-        베스트상품 10개 가져오는 함수
-        """
-        cart_querysets = Cart.objects.filter(order__order_status=PURCHASE_DONE)
-
-        hot_products = cart_querysets.values('product_id').\
-                        annotate(total_quantity_sold=Sum('quantity'))\
-                        .order_by('-quantity')[:10]
-
-        product_querysets = Product.objects.none()
-        for hot_product in hot_products:
-            product_querysets |= Product.objects.filter(id=hot_product['product_id'])
-
-        return product_querysets
