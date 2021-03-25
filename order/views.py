@@ -29,19 +29,19 @@ class CartView(View):
     @auth_check
     def post(self, request):
         try:
-            results = json.loads(request.body)['results']
-            if not results:
+            selected_products = json.loads(request.body)['selected_products']
+            if not selected_products:
                 return JsonResponse({'message': 'OPTION_NOT_SELECTED'}, status=400)
 
             with transaction.atomic():
                 before_purchase, _ = OrderStatus.objects.get_or_create(id=1, status='구매전')
                 order, _           = Order.objects.get_or_create(user=request.user, order_status=before_purchase)
 
-                for result in results:
-                    product_id              = result['product_id']
-                    quantity                = result['quantity']
-                    product_option_id       = result['product_option_id']
-                    product_option_quantity = result['product_option_quantity']
+                for selected_product in selected_products:
+                    product_id              = selected_product['product_id']
+                    quantity                = selected_product['quantity']
+                    product_option_id       = selected_product['product_option_id']
+                    product_option_quantity = selected_product['product_option_quantity']
 
                     if product_option_id:
                         if product_option_quantity == 0:
@@ -128,23 +128,23 @@ class CartView(View):
     @auth_check
     def delete(self, request):
         try:
-            results = json.loads(request.body)['results']
-            if not results:
+            selected_products = json.loads(request.body)['selected_products']
+            if not selected_products:
                 return JsonResponse({'message': 'PRODUCT_NOT_SELECTED'}, status=400)
             with transaction.atomic():
-                for result in results:
-                    if result['product_option_id']:
+                for selected_product in selected_products:
+                    if selected_product['product_option_id']:
                         Cart.objects.get(
-                                        product_id        = result['product_id'],
-                                        product_option_id = result['product_option_id'],
-                                        order_id          = result['order_id']
+                                        product_id        = selected_product['product_id'],
+                                        product_option_id = selected_product['product_option_id'],
+                                        order_id          = selected_product['order_id']
                                     ).delete()
                     else:
                         Cart.objects.get(
-                                        product_id = result['product_id'],
-                                        order_id   = result['order_id']
+                                        product_id = selected_product['product_id'],
+                                        order_id   = selected_product['order_id']
                                     ).delete()
-            return JsonResponse({'message': 'SUCCESS'}, status=201)
+            return JsonResponse({'message': 'SUCCESS'}, status=204)
 
         except JSONDecodeError:
             return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
@@ -157,8 +157,8 @@ class CartView(View):
     @auth_check
     def patch(self, request):
         try:            
-            results = json.loads(request.body)['results']
-            if not results:
+            selected_products = json.loads(request.body)['selected_products']
+            if not selected_products:
                 return JsonResponse({'message': 'PRODUCT_NOT_SELECTED'}, status=400)
 
             with transaction.atomic():
@@ -168,9 +168,9 @@ class CartView(View):
                 order_before_purchase, _  = Order.objects.get_or_create(user=request.user, order_status=before_purchase)
                 order_pending_purchase, _ = Order.objects.get_or_create(user=request.user, order_status=pending_purchase)
 
-                for result in results:
-                    product_id        = result['product_id']
-                    product_option_id = result['product_option_id']
+                for selected_product in selected_products:
+                    product_id        = selected_product['product_id']
+                    product_option_id = selected_product['product_option_id']
 
                     # 결제중인 상품도 장바구니에 노출되는데, 결제중인 상품을 선택해서 담을 가능성이 있기때문에
                     # get 으로 하면 에러가 나기 때문에 filter로 했음. 
