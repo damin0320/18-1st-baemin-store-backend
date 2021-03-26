@@ -288,7 +288,7 @@ class OrderView(View):
                     return JsonResponse({'message': 'NECESSARY_INFORMATION_NOT_FILLED, {}'.format(k)}, status=400)
             
             for k, v in user_detail.items():
-                if not v:
+                if v == '':
                     return JsonResponse({'message': 'NECESSARY_INFORMATION_NOT_FILLED, {}'.format(k)}, status=400)
 
             # 장바구니("구매전")에 담아야 결제페이지 까지 올 수 있기 때문에
@@ -342,7 +342,7 @@ class OrderView(View):
                                                                           customor_message = receiver['customor_message']
                                                                         )
                 
-                if float(request.user.point) < float(user_detail['point_used']):
+                if float(request.user.point) < float(user_detail['point_used']) or float(user_detail['point_used']) < float(user_detail['total_price']):
                     raise PointNotEnough                    
 
                 User.objects.filter(id=request.user.id).update(point=float(request.user.point) - float(user_detail['point_used']) + float(user_detail['point']))
