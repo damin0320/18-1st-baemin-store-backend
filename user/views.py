@@ -159,6 +159,8 @@ class WishListView(View):
         try:
             user_id = request.user.id
             selected_products = json.loads(request.body)['selected_products']
+            if not selected_products:
+                return JsonResponse({'message': 'OPTION_NOT_SELECTED'}, status=400)
 
             for selected_product in selected_products:
                 product_id              = selected_product['product_id']

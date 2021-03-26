@@ -99,7 +99,9 @@ class CartView(View):
 
             # 구매전, 결제중(결제페이지 이동했던 상품들) 상품들 모두 장바구니에 담는다.
             # 장바구니 페이지에서 목록 삭제 가능
-            carts     = list(order_before_purchase.cart_set.all()) + list(order_pending_purchase.cart_set.all())
+            carts = list(order_before_purchase.cart_set.all()) + list(order_pending_purchase.cart_set.all())\
+                    if order_pending_purchase else list(order_before_purchase.cart_set.all())
+                    
             if not carts:
                 return JsonResponse({'message': 'CART_IS_EMPTY'}, status=404)
 
