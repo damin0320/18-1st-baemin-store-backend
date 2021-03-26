@@ -4,6 +4,9 @@ import json
 import random
 import time
 
+from my_settings import DOMAIN_URL
+
+
 f = open('baemin_data.csv', 'r')
 rdr = csv.reader(f)
 
@@ -35,6 +38,5 @@ for i, col in enumerate(rdr):
     data = json.dumps(data_)
 
     s = requests.session()
-    res = s.post('http://5874aafbd9fa.ngrok.io/product', data=data)
+    res = s.post(DOMAIN_URL + '/product', data=data)
     time.sleep(0.1)
-    
