@@ -182,8 +182,9 @@ class ProductRegistryView(View):
                 
                 for image in images:
                     ProductImage.objects.create(product=product, image_url=image)
-                    
-                if sub_category.name == '책':
+                
+                if  category.name == '책':
+                    print('책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책책')
                     publisher  = data['publisher']
                     total_page = data['total_page']
                     size_mm    = data.get('size_mm', None)
