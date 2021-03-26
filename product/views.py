@@ -155,7 +155,6 @@ class ProductView(View):
 
 # TODO: Input filtering logic (type, length ...)
 class ProductRegistryView(View):
-    @transaction.atomic
     def post(self, request):
         try:
             data = json.loads(request.body)
@@ -170,63 +169,64 @@ class ProductRegistryView(View):
             discount_rate         = data.get('discount_rate', 0)
             option_classification = data.get('option_classification', None)
 
-            category    , _ = Category.objects.get_or_create(name=category_name)
-            sub_category, _ = SubCategory.objects.get_or_create(name=sub_category_name, category=category)
-            product         = Product.objects.create(
-                                                     sub_category        = sub_category,
-                                                     name                = product_name,
-                                                     price               = price,
-                                                     thumbnail_image_url = thumbnail,
-                                                     stock               = stock
-                                                )
-            
-            for image in images:
-                ProductImage.objects.create(product=product, image_url=image)
+            with transaction.atomic():
+                category    , _ = Category.objects.get_or_create(name=category_name)
+                sub_category, _ = SubCategory.objects.get_or_create(name=sub_category_name, category=category)
+                product         = Product.objects.create(
+                                                        sub_category        = sub_category,
+                                                        name                = product_name,
+                                                        price               = price,
+                                                        thumbnail_image_url = thumbnail,
+                                                        stock               = stock
+                                                    )
                 
-            if sub_category.name == '책':
-                publisher  = data['publisher']
-                total_page = data['total_page']
-                size_mm    = data.get('size_mm', None)
+                for image in images:
+                    ProductImage.objects.create(product=product, image_url=image)
+                    
+                if sub_category.name == '책':
+                    publisher  = data['publisher']
+                    total_page = data['total_page']
+                    size_mm    = data.get('size_mm', None)
 
-                BookDescription.objects.create(
-                                               product    = product,
-                                               title      = product_name,
-                                               publisher  = publisher,
-                                               size_mm    = size_mm,
-                                               total_page = total_page
-                                            )
-            else:    
-                material            = data.get('material', None)
-                size_cm             = data.get('size_cm', None)
-                manufacture_country = data.get('manufacture_country', None)
-                caution             = data.get('caution', None)
+                    BookDescription.objects.create(
+                                                product    = product,
+                                                title      = product_name,
+                                                publisher  = publisher,
+                                                size_mm    = size_mm,
+                                                total_page = total_page
+                                                )
+                else:    
+                    material            = data.get('material', None)
+                    size_cm             = data.get('size_cm', None)
+                    manufacture_country = data.get('manufacture_country', None)
+                    caution             = data.get('caution', None)
 
-                ProductDescription.objects.create(
-                                                  product             = product,
-                                                  name                = product_name,
-                                                  material            = material,
-                                                  size_cm             = size_cm,
-                                                  manufacture_country = manufacture_country,
-                                                  caution             = caution
+                    ProductDescription.objects.create(
+                                                    product             = product,
+                                                    name                = product_name,
+                                                    material            = material,
+                                                    size_cm             = size_cm,
+                                                    manufacture_country = manufacture_country,
+                                                    caution             = caution
+                                                    )
+
+                if option_classification:
+                    options = data['options']
+                    for option in options:
+                        option_obj, _ = Option.objects.get_or_create(
+                                                                    classification = option_classification,
+                                                                    name           = option['option_name']
+                                                                )
+
+                        ProductOption.objects.create(
+                                                    sub_category     = sub_category,
+                                                    product          = product,
+                                                    stock            = option['option_stock'],
+                                                    additional_price = option['additional_price'],
+                                                    option           = option_obj
                                                 )
 
-            if option_classification:
-                options = data['options']
-                for option in options:
-                    option_obj, _ = Option.objects.get_or_create(
-                                                                 classification = option_classification,
-                                                                 name           = option['option_name']
-                                                            )
-
-                    ProductOption.objects.create(
-                                                 sub_category     = sub_category,
-                                                 product          = product,
-                                                 stock            = option['option_stock'],
-                                                 additional_price = option['additional_price'],
-                                                 option           = option_obj
-                                            )
-
-            DiscountRate.objects.create(product=product, rate=discount_rate)
+                DiscountRate.objects.create(product=product, rate=discount_rate)
             return JsonResponse({'message': 'SUCCESS'}, status=201)
             
         except KeyError:
