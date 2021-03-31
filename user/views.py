@@ -4,17 +4,19 @@ import jwt
 import re
 from json import JSONDecodeError
 
-from django.views import View
-from django.http  import JsonResponse
-from django.db    import transaction
+from django.views     import View
+from django.http      import JsonResponse
+from django.db        import transaction
+from django.shortcuts import redirect
 
 from .models          import User, Coupon, UserCoupon
 from product.models   import SubCategory, CouponSubCategory
-from my_settings      import SECRET_KEY, HASHING_ALGORITHM
-from order.models   import WishList
-from product.models import Product, ProductOption, Option, DiscountRate
-from my_settings import SECRET_KEY, HASHING_ALGORITHM
+from order.models     import WishList
+from product.models   import Product, ProductOption, Option, DiscountRate
+
 from utils.decorators import auth_check, user_check
+from my_settings      import SECRET_KEY, HASHING_ALGORITHM, KAKAO_RESTAPI_KEY
+
 
 
 class LoginView(View):
@@ -32,7 +34,19 @@ class LoginView(View):
             return JsonResponse({'message' : 'KEY_ERROR'}, status=400)
         except User.DoesNotExist:
             return JsonResponse({'message' : 'USER_DOES_NOT_EXIST'}, status=401)
-        
+
+
+class KakaoLoginView(View):
+    def get(self, request):
+        client_id = KAKAO_RESTAPI_KEY
+        redirect_url = 'http://localhost:8000/user/login/kakao/oauth'
+        return redirect('https://kauth.kakao.com/oauth/authorize?client_id={}&redirect_uri={}&response_type=code'.format(client_id, redirect_url))
+
+
+class KakaoLoginCallbackView(View):
+    def get(self, request):
+        return JsonResponse({'message': request.GET})
+
 
 class SignUpView(View):
     def post(self, request):
